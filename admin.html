@@ -35,7 +35,6 @@
         .palette-matrix { display: flex; gap: 8px; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); margin-bottom: 12px; }
         .palette-matrix input[type="color"] { -webkit-appearance: none; border: none; width: 35px; height: 35px; border-radius: 6px; cursor: pointer; background: none; }
 
-        /* 可拖拽项目样式 */
         .dynamic-list-item { 
             display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.25); 
             padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--card-border); 
@@ -186,7 +185,6 @@
             </div>
         </div>
 
-        <!-- 🔊 专属 UI 交互音效引擎（多音效随机触发） -->
         <div class="dash-section">
             <h3>🔊 专属 UI 交互音效引擎（支持多个音频随机播放）</h3>
             <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 15px;">
@@ -194,7 +192,6 @@
             </p>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
-                <!-- 点击音效 -->
                 <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <strong style="font-size: 0.9rem;">🖱️ 点击音效 (Click SFX)</strong>
@@ -204,7 +201,6 @@
                     <div id="sfx-list-click" style="display: flex; flex-direction: column; gap: 6px;"></div>
                 </div>
 
-                <!-- 悬浮展示曲目音效 -->
                 <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <strong style="font-size: 0.9rem;">🎵 悬浮曲目音效 (Track Hover)</strong>
@@ -214,7 +210,6 @@
                     <div id="sfx-list-hover" style="display: flex; flex-direction: column; gap: 6px;"></div>
                 </div>
 
-                <!-- 分类导览切换音效 -->
                 <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <strong style="font-size: 0.9rem;">🧭 分类导览切换 (Category Nav)</strong>
@@ -279,7 +274,6 @@
             </div>
         </div>
 
-        <!-- 媒体发布区（包含鼠标拖拽排序系统） -->
         <div class="dash-section">
             <h3>🚀 媒体发布与作品排序管理（可直接按住 ☰ 拖拽上下排序）</h3>
             <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px;">
@@ -355,25 +349,43 @@
     <script src="config.js" onerror="console.log('未检测到 config.js')"></script>
 
     <script>
-        const syncChannel = new BroadcastChannel('hakki_channel');
+        const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('hakki_channel') : null;
 
-        const dbPromise = new Promise((resolve, reject) => {
-            const request = indexedDB.open('HakkiLocalMediaDB', 1);
-            request.onupgradeneeded = e => {
-                const db = e.target.result;
-                if(!db.objectStoreNames.contains('files')) db.createObjectStore('files');
-            };
-            request.onsuccess = e => resolve(e.target.result);
-            request.onerror = e => reject(e);
-        });
+        // 双端标准库初始器
+        function openDatabaseSafe() {
+            return new Promise((resolve) => {
+                if (!('indexedDB' in window)) return resolve(null);
+                try {
+                    const request = indexedDB.open('HakkiLocalMediaDB', 1);
+                    request.onupgradeneeded = e => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('files')) {
+                            db.createObjectStore('files');
+                        }
+                    };
+                    request.onsuccess = e => resolve(e.target.result);
+                    request.onerror = () => resolve(null);
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        }
+
+        const dbPromise = openDatabaseSafe();
 
         async function saveFileToDB(id, file) {
-            const db = await dbPromise;
-            return new Promise((resolve, reject) => {
-                const tx = db.transaction('files', 'readwrite');
-                tx.objectStore('files').put(file, id);
-                tx.oncomplete = resolve; tx.onerror = reject;
-            });
+            try {
+                const db = await dbPromise;
+                if (!db || !db.objectStoreNames.contains('files')) return;
+                return new Promise((resolve, reject) => {
+                    const tx = db.transaction('files', 'readwrite');
+                    tx.objectStore('files').put(file, id);
+                    tx.oncomplete = resolve; 
+                    tx.onerror = reject;
+                });
+            } catch (err) {
+                console.warn('本地 IndexedDB 保存失败:', err);
+            }
         }
 
         let infoBlocks = [
@@ -381,10 +393,13 @@
             { id: 2, label: "Bio", value: "Kawaii Bass / 电子音乐", isTitle: false, children: ["专注低频美学", "赛博朋克叙事"] },
             { id: 3, label: "Contact", value: "WeChat: hakki", isTitle: false, children: [] }
         ];
-        let categoryBlocks = [{ id: 'c1', name: "Kawaii Bass" }, { id: 'c2', name: "商业视频配乐" }];
+        let categoryBlocks = [{ id: 'c1', name: "Kawaii Bass" }, { id: 'c2', name: "商业配乐" }];
         let mediaFiles = [];
         let soundEffects = { click: [], hover: [], nav: [], volume: 0.6 };
-        let currentBgDbId = localStorage.getItem('hakki_bg_db_id') || null;
+        let currentBgDbId = null;
+        try {
+            currentBgDbId = localStorage.getItem('hakki_bg_db_id') || null;
+        } catch(e) {}
 
         function getFullConfig() {
             const safeMedia = mediaFiles.map(m => { const { tempUrl, waveformData, ...rest } = m; return rest; });
@@ -428,13 +443,14 @@
         function syncAll() {
             document.getElementById('card-opacity-val').innerText = document.getElementById('card-opacity').value + '%';
             const cfg = getFullConfig();
-            localStorage.setItem('HAKKI_LOCAL_CACHE', JSON.stringify(cfg));
-            syncChannel.postMessage({ type: 'SYNC_CONFIG', payload: cfg });
+            try {
+                localStorage.setItem('HAKKI_LOCAL_CACHE', JSON.stringify(cfg));
+            } catch(e) {}
+            if (syncChannel) {
+                syncChannel.postMessage({ type: 'SYNC_CONFIG', payload: cfg });
+            }
         }
 
-        // ==========================================
-        // 🔊 音效管理与上传系统
-        // ==========================================
         async function handleSFXUpload(event, type) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
@@ -483,7 +499,9 @@
             const dbId = 'global_bg_' + Date.now();
             await saveFileToDB(dbId, file);
             currentBgDbId = dbId;
-            localStorage.setItem('hakki_bg_db_id', dbId);
+            try {
+                localStorage.setItem('hakki_bg_db_id', dbId);
+            } catch(e) {}
 
             document.getElementById('global-bg-type').value = type;
             status.innerText = `✅ 背景已缓存至本地！`;
@@ -493,7 +511,9 @@
 
         function clearGlobalBgDirect() {
             currentBgDbId = null;
-            localStorage.removeItem('hakki_bg_db_id');
+            try {
+                localStorage.removeItem('hakki_bg_db_id');
+            } catch(e) {}
             document.getElementById('global-bg-url').value = '';
             document.getElementById('bg-upload-status').innerText = '背景已清除';
             syncAll();
@@ -504,36 +524,49 @@
             const jsString = `const HAKKI_CONFIG = ${JSON.stringify(configObj, null, 4)};`;
             const blob = new Blob([jsString], { type: 'text/javascript' });
             const url = URL.createObjectURL(blob);
-            const a = document.createElement('a'); a.href = url; a.download = 'config.js';
-            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
-            alert('导出成功！请将下载的 config.js 放进项目同级目录。');
+            const a = document.createElement('a'); 
+            a.href = url; 
+            a.download = 'config.js';
+            document.body.appendChild(a); 
+            a.click(); 
+            document.body.removeChild(a); 
+            URL.revokeObjectURL(url);
+            alert('导出成功！请将下载的 config.js 放进与 index.html 同级目录。');
         }
 
         function importConfig(event) {
-            const file = event.target.files[0]; if (!file) return;
+            const file = event.target.files[0]; 
+            if (!file) return;
             const reader = new FileReader();
             reader.onload = function(e) {
                 try {
                     const match = e.target.result.match(/const\s+HAKKI_CONFIG\s*=\s*(\{[\s\S]*\});/);
                     if (match && match[1]) {
                         localStorage.setItem('HAKKI_LOCAL_CACHE', match[1]);
-                        alert('读取成功！页面将重载应用...'); setTimeout(() => location.reload(), 800);
+                        alert('读取成功！页面将重载应用...'); 
+                        setTimeout(() => location.reload(), 800);
                     } else alert('文件格式解析失败');
                 } catch(err) { alert('导入出错: ' + err); }
             };
-            reader.readAsText(file); event.target.value = '';
+            reader.readAsText(file); 
+            event.target.value = '';
         }
 
         function renderInfoAdmin() {
-            const list = document.getElementById('dynamic-info-admin-list'); list.innerHTML = '';
+            const list = document.getElementById('dynamic-info-admin-list'); 
+            list.innerHTML = '';
             infoBlocks.forEach((block, index) => {
-                const item = document.createElement('div'); item.className = 'dynamic-list-item';
+                const item = document.createElement('div'); 
+                item.className = 'dynamic-list-item';
                 item.innerHTML = `<input type="text" value="${block.label}" onchange="updateInfo(${block.id}, 'label', this.value)" style="width: 80px; font-weight:bold;"><input type="text" value="${block.value}" onchange="updateInfo(${block.id}, 'value', this.value)"><span class="action-icon" onclick="toggleTitle(${block.id})">${block.isTitle ? '⭐' : '☆'}</span><span class="action-icon" onclick="addSubInfo(${block.id})">+</span><span class="action-icon" onclick="moveInfo(${index}, -1)">↑</span><span class="action-icon" onclick="moveInfo(${index}, 1)">↓</span><span class="action-icon del" onclick="deleteInfo(${block.id})">✕</span>`;
                 list.appendChild(item);
                 if (block.children && block.children.length > 0) {
-                    const subList = document.createElement('div'); subList.style = "margin-left: 25px; margin-bottom: 6px;";
+                    const subList = document.createElement('div'); 
+                    subList.style = "margin-left: 25px; margin-bottom: 6px;";
                     block.children.forEach((sub, subIdx) => {
-                        const subItem = document.createElement('div'); subItem.className = 'dynamic-list-item'; subItem.style = "padding: 4px 8px;";
+                        const subItem = document.createElement('div'); 
+                        subItem.className = 'dynamic-list-item'; 
+                        subItem.style = "padding: 4px 8px;";
                         subItem.innerHTML = `<input type="text" value="${sub}" onchange="updateSubInfo(${block.id}, ${subIdx}, this.value)"><span class="action-icon del" onclick="deleteSubInfo(${block.id}, ${subIdx})">✕</span>`;
                         subList.appendChild(subItem);
                     });
@@ -551,13 +584,16 @@
         function deleteSubInfo(id, idx) { const b = infoBlocks.find(x => x.id === id); if (b && b.children) { b.children.splice(idx, 1); renderInfoAdmin(); syncAll(); } }
 
         function renderCatAdmin() {
-            const list = document.getElementById('dynamic-cat-admin-list'); list.innerHTML = '';
+            const list = document.getElementById('dynamic-cat-admin-list'); 
+            list.innerHTML = '';
             categoryBlocks.forEach((cat, index) => {
-                const item = document.createElement('div'); item.className = 'dynamic-list-item';
+                const item = document.createElement('div'); 
+                item.className = 'dynamic-list-item';
                 item.innerHTML = `<input type="text" value="${cat.name}" onchange="updateCat('${cat.id}', this.value)"><span class="action-icon" onclick="moveCat(${index}, -1)">↑</span><span class="action-icon" onclick="moveCat(${index}, 1)">↓</span><span class="action-icon del" onclick="deleteCat('${cat.id}')">✕</span>`;
                 list.appendChild(item);
             });
-            const sel = document.getElementById('upload-cat-select'); sel.innerHTML = '';
+            const sel = document.getElementById('upload-cat-select'); 
+            sel.innerHTML = '';
             categoryBlocks.forEach(c => { sel.innerHTML += `<option value="${c.name}">${c.name}</option>`; });
         }
         function addCategoryBlock() { categoryBlocks.push({ id: 'c'+Date.now(), name: "新建分类" }); renderCatAdmin(); syncAll(); }
@@ -566,13 +602,22 @@
         function moveCat(index, dir) { if(index+dir<0 || index+dir>=categoryBlocks.length) return; const t = categoryBlocks[index]; categoryBlocks[index] = categoryBlocks[index+dir]; categoryBlocks[index+dir] = t; renderCatAdmin(); syncAll(); }
 
         async function handleUpload(event) {
-            const file = event.target.files[0]; if (!file) return;
+            const file = event.target.files[0]; 
+            if (!file) return;
             const dbId = 'media_' + Date.now();
             await saveFileToDB(dbId, file);
             mediaFiles.push({
-                id: Date.now(), type: 'audio', title: file.name.replace(/\.[^/.]+$/, ""), author: "hakki",
-                url: '', dbId: dbId, category: document.getElementById('upload-cat-select').value || (categoryBlocks.length>0?categoryBlocks[0].name:'未分类'),
-                notes: [], cardColor: null, particleEngine: -1, particleColors: []
+                id: Date.now(), 
+                type: 'audio', 
+                title: file.name.replace(/\.[^/.]+$/, ""), 
+                author: "hakki",
+                url: '', 
+                dbId: dbId, 
+                category: document.getElementById('upload-cat-select').value || (categoryBlocks.length>0?categoryBlocks[0].name:'未分类'),
+                notes: [], 
+                cardColor: null, 
+                particleEngine: -1, 
+                particleColors: []
             });
             event.target.value = '';
             renderMediaAdminList();
@@ -580,13 +625,11 @@
             alert('曲目已入库并广播至展示端！');
         }
 
-        // ==========================================
-        // ☰ 核心：拖拽排序渲染系统
-        // ==========================================
         let draggedItemIndex = null;
 
         function renderMediaAdminList() {
-            const list = document.getElementById('media-items-manage-list'); list.innerHTML = '';
+            const list = document.getElementById('media-items-manage-list'); 
+            list.innerHTML = '';
             mediaFiles.forEach((media, idx) => {
                 const item = document.createElement('div');
                 item.className = 'dynamic-list-item';
@@ -606,7 +649,6 @@
                         <button class="btn" style="padding: 4px 10px; font-size: 0.8rem; color:#ef4444;" onclick="deleteMedia(${media.id})">✕ 删除</button>
                     </div>`;
 
-                // 拖动排序事件
                 item.addEventListener('dragstart', (e) => {
                     draggedItemIndex = idx;
                     item.classList.add('is-dragging');
@@ -627,12 +669,11 @@
                     const targetIndex = parseInt(item.dataset.index);
                     if (draggedItemIndex === null || draggedItemIndex === targetIndex) return;
 
-                    // 移动数组元素
                     const movedItem = mediaFiles.splice(draggedItemIndex, 1)[0];
                     mediaFiles.splice(targetIndex, 0, movedItem);
 
                     renderMediaAdminList();
-                    syncAll(); // 广播全新排序给前台页面
+                    syncAll();
                 });
 
                 list.appendChild(item);
@@ -641,15 +682,17 @@
 
         let tempEditNotes = [];
         function openEditModal(id) {
-            const media = mediaFiles.find(m => m.id === id); if(!media) return;
+            const media = mediaFiles.find(m => m.id === id); 
+            if(!media) return;
             document.getElementById('edit-id').value = id;
             document.getElementById('edit-title').value = media.title;
             document.getElementById('edit-author').value = media.author;
             document.getElementById('edit-url').value = media.url || '';
-            const sel = document.getElementById('edit-category'); sel.innerHTML = '';
+            const sel = document.getElementById('edit-category'); 
+            sel.innerHTML = '';
             categoryBlocks.forEach(c => { sel.innerHTML += `<option value="${c.name}" ${c.name === media.category ? 'selected' : ''}>${c.name}</option>`; });
             document.getElementById('edit-card-color').value = media.cardColor || '#8b5cf6';
-            document.getElementById('edit-particle-engine').value = media.particleEngine ?? -1;
+            document.getElementById('edit-particle-engine').value = media.particleEngine !== undefined ? media.particleEngine : -1;
             document.getElementById('edit-p-color1').value = media.particleColors?.[0] || '#8b5cf6';
             document.getElementById('edit-p-color2').value = media.particleColors?.[1] || '#06b6d4';
             tempEditNotes = [...(media.notes || [])];
@@ -657,9 +700,11 @@
             document.getElementById('edit-modal').style.display = 'flex';
         }
         function renderEditNotes() {
-            const list = document.getElementById('edit-notes-list'); list.innerHTML = '';
+            const list = document.getElementById('edit-notes-list'); 
+            list.innerHTML = '';
             tempEditNotes.forEach((n, i) => {
-                const item = document.createElement('div'); item.className = 'note-item';
+                const item = document.createElement('div'); 
+                item.className = 'note-item';
                 item.innerHTML = `<input type="text" value="${n}" onchange="tempEditNotes[${i}] = this.value"><span class="action-icon del" onclick="tempEditNotes.splice(${i}, 1); renderEditNotes();">✕</span>`;
                 list.appendChild(item);
             });
@@ -693,10 +738,12 @@
 
         window.addEventListener('DOMContentLoaded', () => {
             let loaded = null;
-            if (typeof HAKKI_CONFIG !== 'undefined') loaded = HAKKI_CONFIG;
+            if (typeof HAKKI_CONFIG !== 'undefined' && HAKKI_CONFIG) loaded = HAKKI_CONFIG;
             else {
-                const s = localStorage.getItem('HAKKI_LOCAL_CACHE');
-                if (s) loaded = JSON.parse(s);
+                try {
+                    const s = localStorage.getItem('HAKKI_LOCAL_CACHE');
+                    if (s) loaded = JSON.parse(s);
+                } catch(e) {}
             }
             if (loaded) {
                 infoBlocks = loaded.infoBlocks || infoBlocks;
@@ -737,6 +784,8 @@
             renderSFXAdminList('click');
             renderSFXAdminList('hover');
             renderSFXAdminList('nav');
+
+            syncAll();
         });
     </script>
 </body>
