@@ -16,10 +16,19 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        body { cursor: none; font-family: 'Outfit', -apple-system, sans-serif; background-color: transparent; color: var(--text-main); transition: color 0.5s ease; overflow-x: hidden; min-height: 100vh; padding-bottom: 140px; }
+        body { 
+            cursor: none; 
+            font-family: 'Outfit', -apple-system, sans-serif; 
+            background-color: var(--bg-color); 
+            color: var(--text-main); 
+            transition: color 0.5s ease; 
+            overflow-x: hidden; 
+            min-height: 100vh; 
+            padding-bottom: 140px; 
+        }
         a, button, select, .ui-interactive { cursor: none !important; }
 
-        #bg-media-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -3; overflow: hidden; pointer-events: none; background: #000; }
+        #bg-media-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -3; overflow: hidden; pointer-events: none; background: #050505; }
         .bg-media-item { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1); }
         .bg-media-item.active { opacity: 1; }
         #bg-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; pointer-events: none; background-color: var(--bg-color); transition: background-color 0.8s ease, opacity 0.5s ease; }
@@ -59,7 +68,6 @@
         .global-player { position: fixed; bottom: -140px; left: 30px; right: 30px; height: 90px; background: var(--card-bg); backdrop-filter: blur(24px); border: 1px solid var(--card-border); z-index: 500; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; padding: 0 28px; gap: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
         .global-player.active { bottom: 25px; }
 
-        /* 形状全联动系统 */
         [data-card-shape="modern"] .media-card { border-radius: 20px; }
         [data-card-shape="modern"] .filter-btn { border-radius: 30px; }
         [data-card-shape="modern"] .global-player { border-radius: 24px; }
@@ -91,22 +99,12 @@
         .media-card[data-custom-color="true"] .media-type-tag, .media-card[data-custom-color="true"] .play-toggle { background: var(--card-theme-color); }
         .media-card[data-custom-color="true"]:hover { border-color: var(--card-theme-color); }
 
-        /* 列表布局排版 */
         .media-grid.list-view { grid-template-columns: 1fr; gap: 16px; }
         .media-grid.list-view .media-card { flex-direction: row; align-items: center; padding: 16px 28px; gap: 24px; }
-        
-        .media-grid.list-view .media-header { 
-            margin-bottom: 0; width: 190px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; 
-        }
+        .media-grid.list-view .media-header { margin-bottom: 0; width: 190px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; }
         .media-grid.list-view .media-author { margin-bottom: 0; }
-        
-        .media-grid.list-view .audio-player-ui { 
-            flex: 1; margin-top: 0; width: 100%; display: flex; align-items: center; gap: 16px; background: transparent; padding: 0; 
-        }
-        
-        .media-grid.list-view .card-footer { 
-            margin-top: 0; padding-top: 0; border-top: none; flex-shrink: 0; width: 90px; display: flex; justify-content: flex-end; 
-        }
+        .media-grid.list-view .audio-player-ui { flex: 1; margin-top: 0; width: 100%; display: flex; align-items: center; gap: 16px; background: transparent; padding: 0; }
+        .media-grid.list-view .card-footer { margin-top: 0; padding-top: 0; border-top: none; flex-shrink: 0; width: 90px; display: flex; justify-content: flex-end; }
 
         .media-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
         .media-title { font-weight: 800; font-size: 1.15rem; line-height: 1.3; }
@@ -168,7 +166,6 @@
         </div>
     </div>
 
-    <!-- 全局悬浮底栏播放器 -->
     <div class="global-player" id="global-player">
         <div class="player-track-info">
             <div class="player-track-title" id="gp-title">未选择曲目</div>
@@ -195,29 +192,76 @@
         </div>
     </div>
 
-    <script src="config.js" onerror="console.log('未检测到 config.js，将读取浏览器缓存或等待管理页广播')"></script>
+    <script src="config.js" onerror="console.log('未检测到 config.js，将启用本地兜底方案')"></script>
 
     <script>
-        const syncChannel = new BroadcastChannel('hakki_channel');
+        const DEFAULT_FALLBACK_CONFIG = {
+            visuals: {
+                theme: "#8b5cf6",
+                bg: "#050505",
+                card: "#111318",
+                cardOpacity: 60,
+                text: "#f3f4f6",
+                glow: 40,
+                layout: "top",
+                cardShape: "modern",
+                mediaLayout: "list",
+                playerStyle: "glass",
+                bgEngine: 0,
+                density: 300,
+                palette: ['#1e3a8a', '#06b6d4', '#fbbf24', '#9ca3af'],
+                bgOverlayOpacity: 100
+            },
+            infoBlocks: [
+                { id: 1, label: "Creator", value: "hakki", isTitle: true, children: ["音乐制作人 / 视觉艺术家"] },
+                { id: 2, label: "Bio", value: "Kawaii Bass / 电子音乐", isTitle: false, children: ["专注低频美学", "赛博朋克叙事"] },
+                { id: 3, label: "Contact", value: "WeChat: hakki", isTitle: false, children: [] }
+            ],
+            categoryBlocks: [{ id: 'c1', name: "Kawaii Bass" }, { id: 'c2', name: "商业配乐" }],
+            mediaFiles: [],
+            soundEffects: { click: [], hover: [], nav: [], volume: 0.6 }
+        };
 
-        const dbPromise = new Promise((resolve, reject) => {
-            const request = indexedDB.open('HakkiLocalMediaDB', 1);
-            request.onsuccess = e => resolve(e.target.result);
-            request.onerror = e => reject(e);
-        });
+        const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('hakki_channel') : null;
+
+        function openDatabaseSafe() {
+            return new Promise((resolve) => {
+                if (!('indexedDB' in window)) return resolve(null);
+                try {
+                    const request = indexedDB.open('HakkiLocalMediaDB', 1);
+                    request.onupgradeneeded = e => {
+                        const db = e.target.result;
+                        if (!db.objectStoreNames.contains('files')) {
+                            db.createObjectStore('files');
+                        }
+                    };
+                    request.onsuccess = e => resolve(e.target.result);
+                    request.onerror = () => resolve(null);
+                } catch (e) {
+                    resolve(null);
+                }
+            });
+        }
+
+        const dbPromise = openDatabaseSafe();
 
         async function getFileFromDB(id, type = 'audio/mp3') {
-            const db = await dbPromise;
-            return new Promise((resolve) => {
-                const tx = db.transaction('files', 'readonly');
-                const req = tx.objectStore('files').get(id);
-                req.onsuccess = () => {
-                    const raw = req.result;
-                    if (!raw) return resolve(null);
-                    resolve(new Blob([raw], { type: raw.type || type }));
-                };
-                req.onerror = () => resolve(null);
-            });
+            try {
+                const db = await dbPromise;
+                if (!db || !db.objectStoreNames.contains('files')) return null;
+                return new Promise((resolve) => {
+                    const tx = db.transaction('files', 'readonly');
+                    const req = tx.objectStore('files').get(id);
+                    req.onsuccess = () => {
+                        const raw = req.result;
+                        if (!raw) return resolve(null);
+                        resolve(new Blob([raw], { type: raw.type || type }));
+                    };
+                    req.onerror = () => resolve(null);
+                });
+            } catch (e) {
+                return null;
+            }
         }
 
         let infoBlocks = [];
@@ -227,9 +271,6 @@
         let currentFilter = '全部展示';
         let userInteracted = false;
 
-        // ==========================================
-        // 🔊 交互音效随机播放引擎 (核心兼容修复)
-        // ==========================================
         const sfxCache = { click: [], hover: [], nav: [] };
 
         async function preloadSFX() {
@@ -237,14 +278,11 @@
                 sfxCache[type] = [];
                 const items = soundEffects[type] || [];
                 for (let item of items) {
-                    // 兼容处理：既支持存入对象 { id: ... }，也支持存入纯字符串 ID
                     const sfxId = (typeof item === 'object' && item !== null) ? item.id : item;
                     if (!sfxId) continue;
-                    
                     const blob = await getFileFromDB(sfxId, 'audio/mp3');
                     if (blob) {
-                        const url = URL.createObjectURL(blob);
-                        sfxCache[type].push(url);
+                        sfxCache[type].push(URL.createObjectURL(blob));
                     }
                 }
             }
@@ -253,7 +291,6 @@
         function playRandomSFX(type) {
             const list = sfxCache[type];
             if (!list || list.length === 0) return;
-            // 未发生点击交互前，浏览器会拦截纯鼠标滑过的音效，避免抛出警告
             if (type === 'hover' && !userInteracted) return;
 
             const chosenUrl = list[Math.floor(Math.random() * list.length)];
@@ -262,7 +299,6 @@
             audio.play().catch(() => {});
         }
 
-        // 全局交互监听：点击任何交互项触发点击音效，同时解锁浏览器音频限制
         window.addEventListener('pointerdown', (e) => {
             userInteracted = true;
             if (e.target.closest('button, .filter-btn, .play-toggle, .global-play-btn, .card-waveform-wrap, input[type="range"]')) {
@@ -270,11 +306,15 @@
             }
         });
 
-        function hexToRgbVals(hex) { if(!hex) return '255,255,255'; let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return `${r}, ${g}, ${b}`; }
+        function hexToRgbVals(hex) { 
+            if(!hex) return '255,255,255'; 
+            let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); 
+            return `${r}, ${g}, ${b}`; 
+        }
         function hexToRgbaStr(hex, alpha) { return `rgba(${hexToRgbVals(hex)}, ${alpha})`; }
 
         async function applyConfig(cfg) {
-            if (!cfg) return;
+            if (!cfg) cfg = DEFAULT_FALLBACK_CONFIG;
             infoBlocks = cfg.infoBlocks || [];
             categoryBlocks = cfg.categoryBlocks || [];
             mediaFiles = cfg.mediaFiles || [];
@@ -284,15 +324,15 @@
 
             if (cfg.visuals) {
                 const v = cfg.visuals;
-                document.documentElement.style.setProperty('--theme-color', v.theme);
-                document.documentElement.style.setProperty('--theme-rgb', hexToRgbVals(v.theme));
-                document.documentElement.style.setProperty('--bg-color', v.bg);
-                document.documentElement.style.setProperty('--bg-rgb', hexToRgbVals(v.bg));
+                document.documentElement.style.setProperty('--theme-color', v.theme || '#8b5cf6');
+                document.documentElement.style.setProperty('--theme-rgb', hexToRgbVals(v.theme || '#8b5cf6'));
+                document.documentElement.style.setProperty('--bg-color', v.bg || '#050505');
+                document.documentElement.style.setProperty('--bg-rgb', hexToRgbVals(v.bg || '#050505'));
                 
                 const cardOp = v.cardOpacity !== undefined ? (v.cardOpacity / 100) : 0.6;
-                document.documentElement.style.setProperty('--card-bg', hexToRgbaStr(v.card, cardOp));
-                document.documentElement.style.setProperty('--text-main', v.text);
-                document.documentElement.style.setProperty('--text-sub', hexToRgbaStr(v.text, 0.6));
+                document.documentElement.style.setProperty('--card-bg', hexToRgbaStr(v.card || '#111318', cardOp));
+                document.documentElement.style.setProperty('--text-main', v.text || '#f3f4f6');
+                document.documentElement.style.setProperty('--text-sub', hexToRgbaStr(v.text || '#f3f4f6', 0.6));
 
                 document.documentElement.style.setProperty('--module-glow-size', (v.glow || 0) + 'px');
                 document.documentElement.style.setProperty('--module-glow-opacity', (v.glow || 0) > 0 ? ((v.glow) / 100) * 0.8 : 0);
@@ -313,8 +353,7 @@
                 if (v.bgDbId) {
                     const bgFile = await getFileFromDB(v.bgDbId, v.globalBgType === 'video' ? 'video/mp4' : 'image/jpeg');
                     if (bgFile) {
-                        const localBlobUrl = URL.createObjectURL(bgFile);
-                        setGlobalBackground(v.globalBgType || 'auto', localBlobUrl);
+                        setGlobalBackground(v.globalBgType || 'auto', URL.createObjectURL(bgFile));
                     }
                 } else if (v.globalBgUrl) {
                     setGlobalBackground(v.globalBgType || 'auto', v.globalBgUrl);
@@ -325,7 +364,6 @@
                 currentPalette = v.palette || ['#1e3a8a', '#06b6d4', '#fbbf24', '#9ca3af'];
                 currentEngine = parseInt(v.bgEngine || 0);
                 currentDensity = parseInt(v.density || 300);
-                switchBackgroundEngine();
             }
 
             for (let m of mediaFiles) {
@@ -338,20 +376,34 @@
             renderInfoDisplay();
             renderFilters();
             renderMedia();
+            switchBackgroundEngine();
         }
 
-        syncChannel.onmessage = (e) => {
-            if (e.data && e.data.type === 'SYNC_CONFIG') applyConfig(e.data.payload);
-        };
+        if (syncChannel) {
+            syncChannel.onmessage = (e) => {
+                if (e.data && e.data.type === 'SYNC_CONFIG') applyConfig(e.data.payload);
+            };
+        }
 
         window.addEventListener('storage', (e) => {
-            if (e.key === 'HAKKI_LOCAL_CACHE' && e.newValue) applyConfig(JSON.parse(e.newValue));
+            if (e.key === 'HAKKI_LOCAL_CACHE' && e.newValue) {
+                try { applyConfig(JSON.parse(e.newValue)); } catch (err) {}
+            }
         });
 
-        // 鼠标
-        const cursorDot = document.getElementById('cursor-dot'); const cursorRing = document.getElementById('cursor-ring');
+        const cursorDot = document.getElementById('cursor-dot'); 
+        const cursorRing = document.getElementById('cursor-ring');
         let mouseX = -1000, mouseY = -1000, ringX = -1000, ringY = -1000;
-        function animateCursor() { ringX += (mouseX - ringX) * 0.2; ringY += (mouseY - ringY) * 0.2; cursorDot.style.left = mouseX + 'px'; cursorDot.style.top = mouseY + 'px'; cursorRing.style.left = ringX + 'px'; cursorRing.style.top = ringY + 'px'; requestAnimationFrame(animateCursor); } animateCursor();
+        function animateCursor() { 
+            ringX += (mouseX - ringX) * 0.2; 
+            ringY += (mouseY - ringY) * 0.2; 
+            cursorDot.style.left = mouseX + 'px'; 
+            cursorDot.style.top = mouseY + 'px'; 
+            cursorRing.style.left = ringX + 'px'; 
+            cursorRing.style.top = ringY + 'px'; 
+            requestAnimationFrame(animateCursor); 
+        } 
+        animateCursor();
         window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
 
         let activeBgMedia = null;
@@ -371,25 +423,34 @@
             activeBgMedia = newEl;
         }
         function clearGlobalBackground() {
-            if (activeBgMedia) { activeBgMedia.classList.remove('active'); const oldEl = activeBgMedia; setTimeout(() => { if (oldEl.parentNode) oldEl.parentNode.removeChild(oldEl); }, 1200); activeBgMedia = null; }
+            if (activeBgMedia) { 
+                activeBgMedia.classList.remove('active'); 
+                const oldEl = activeBgMedia; 
+                setTimeout(() => { if (oldEl.parentNode) oldEl.parentNode.removeChild(oldEl); }, 1200); 
+                activeBgMedia = null; 
+            }
         }
 
         function renderInfoDisplay() {
-            const display = document.getElementById('dynamic-header-display'); display.innerHTML = '';
+            const display = document.getElementById('dynamic-header-display'); 
+            display.innerHTML = '';
             infoBlocks.forEach(block => {
-                const div = document.createElement('div'); div.className = `info-block ui-interactive ${block.isTitle ? 'is-title' : ''}`;
+                const div = document.createElement('div'); 
+                div.className = `info-block ui-interactive ${block.isTitle ? 'is-title' : ''}`;
                 let html = `<span class="label">${block.label}</span><span class="value">${block.value}</span>`;
                 if (block.children && block.children.length > 0) {
                     html += '<div class="sub-info-blocks">';
                     block.children.forEach(sub => { html += `<div class="sub-info-item">• ${sub}</div>`; });
                     html += '</div>';
                 }
-                div.innerHTML = html; display.appendChild(div);
+                div.innerHTML = html; 
+                display.appendChild(div);
             });
         }
 
         function renderFilters() {
-            const box = document.getElementById('filter-container'); box.innerHTML = '';
+            const box = document.getElementById('filter-container'); 
+            box.innerHTML = '';
             const allCats = ['全部展示', ...categoryBlocks.map(c => c.name)];
             allCats.forEach(cat => {
                 const btn = document.createElement('button');
@@ -397,7 +458,7 @@
                 btn.innerText = cat;
                 btn.onclick = () => { 
                     currentFilter = cat; 
-                    playRandomSFX('nav'); // 触发分类导览音效
+                    playRandomSFX('nav');
                     renderFilters(); 
                     filterMediaCards(); 
                 };
@@ -406,19 +467,34 @@
         }
 
         function filterMediaCards() {
-            const cards = document.querySelectorAll('.media-card'); let visibleCount = 0;
+            const cards = document.querySelectorAll('.media-card'); 
+            let visibleCount = 0;
             cards.forEach(card => {
-                if (currentFilter === '全部展示' || card.dataset.category === currentFilter) { card.style.display = 'flex'; visibleCount++; }
-                else { card.style.display = 'none'; }
+                if (currentFilter === '全部展示' || card.dataset.category === currentFilter) { 
+                    card.style.display = 'flex'; 
+                    visibleCount++; 
+                } else { 
+                    card.style.display = 'none'; 
+                }
             });
-            const grid = document.getElementById('media-grid'); let emptyMsg = document.getElementById('empty-state-msg');
+            const grid = document.getElementById('media-grid'); 
+            let emptyMsg = document.getElementById('empty-state-msg');
             if (visibleCount === 0) {
-                if (!emptyMsg) { emptyMsg = document.createElement('div'); emptyMsg.id = 'empty-state-msg'; emptyMsg.style = "grid-column: 1/-1; text-align:center; padding: 50px; color: var(--text-sub);"; emptyMsg.innerText = "当前分类暂无展示内容"; grid.appendChild(emptyMsg); }
-            } else if (emptyMsg) { emptyMsg.remove(); }
+                if (!emptyMsg) { 
+                    emptyMsg = document.createElement('div'); 
+                    emptyMsg.id = 'empty-state-msg'; 
+                    emptyMsg.style = "grid-column: 1/-1; text-align:center; padding: 50px; color: var(--text-sub);"; 
+                    emptyMsg.innerText = "当前分类暂无展示内容"; 
+                    grid.appendChild(emptyMsg); 
+                }
+            } else if (emptyMsg) { 
+                emptyMsg.remove(); 
+            }
         }
 
         function generatePseudoWaveform(seedStr, count = 110) {
-            let hash = 0; for(let i=0; i<seedStr.length; i++) hash = (hash << 5) - hash + seedStr.charCodeAt(i);
+            let hash = 0; 
+            for(let i=0; i<seedStr.length; i++) hash = (hash << 5) - hash + seedStr.charCodeAt(i);
             const bars = [];
             for (let i = 0; i < count; i++) {
                 const x = Math.sin(hash + i * 0.28) * 10000;
@@ -428,28 +504,42 @@
         }
 
         function drawWaveform(canvas, bars, progressPercent = 0, color = '#8b5cf6') {
-            const ctx = canvas.getContext('2d'); const w = canvas.width, h = canvas.height;
-            ctx.clearRect(0, 0, w, h); const barWidth = w / bars.length;
+            const ctx = canvas.getContext('2d'); 
+            const w = canvas.width, h = canvas.height;
+            ctx.clearRect(0, 0, w, h); 
+            const barWidth = w / bars.length;
             bars.forEach((val, i) => {
-                const barH = (val / 100) * h * 0.85; const x = i * barWidth; const y = (h - barH) / 2;
+                const barH = (val / 100) * h * 0.85; 
+                const x = i * barWidth; 
+                const y = (h - barH) / 2;
                 ctx.fillStyle = (x / w) <= progressPercent ? color : 'rgba(255, 255, 255, 0.22)';
                 ctx.fillRect(x + 1, y, Math.max(1.5, barWidth - 2), barH);
             });
         }
 
-        function formatTime(sec) { if(isNaN(sec)||!isFinite(sec)) return "0:00"; const m=Math.floor(sec/60), s=Math.floor(sec%60).toString().padStart(2,'0'); return `${m}:${s}`; }
+        function formatTime(sec) { 
+            if(isNaN(sec)||!isFinite(sec)) return "0:00"; 
+            const m=Math.floor(sec/60), s=Math.floor(sec%60).toString().padStart(2,'0'); 
+            return `${m}:${s}`; 
+        }
 
         function renderMedia() {
-            const grid = document.getElementById('media-grid'); grid.innerHTML = '';
+            const grid = document.getElementById('media-grid'); 
+            grid.innerHTML = '';
             mediaFiles.forEach((media) => {
                 if(!media.waveformData) media.waveformData = generatePseudoWaveform(media.title + media.id);
-                const card = document.createElement('div'); card.className = 'media-card'; card.dataset.category = media.category; card.dataset.id = media.id; card.id = `media-card-${media.id}`;
-                if (media.cardColor) { card.dataset.customColor = "true"; card.style.setProperty('--card-theme-color', media.cardColor); card.style.setProperty('--card-theme-rgb', hexToRgbVals(media.cardColor)); }
+                const card = document.createElement('div'); 
+                card.className = 'media-card'; 
+                card.dataset.category = media.category; 
+                card.dataset.id = media.id; 
+                card.id = `media-card-${media.id}`;
+                if (media.cardColor) { 
+                    card.dataset.customColor = "true"; 
+                    card.style.setProperty('--card-theme-color', media.cardColor); 
+                    card.style.setProperty('--card-theme-rgb', hexToRgbVals(media.cardColor)); 
+                }
 
-                // 鼠标扫过卡片触发悬浮展示音效
-                card.addEventListener('mouseenter', () => {
-                    playRandomSFX('hover');
-                });
+                card.addEventListener('mouseenter', () => playRandomSFX('hover'));
 
                 let notesHtml = '';
                 if (media.notes && media.notes.length > 0) {
@@ -496,7 +586,8 @@
             const wrap = document.getElementById(`waveform-wrap-${media.id}`);
             if(!canvas || !wrap) return;
 
-            canvas.width = wrap.offsetWidth * 2; canvas.height = wrap.offsetHeight * 2;
+            canvas.width = wrap.offsetWidth * 2; 
+            canvas.height = wrap.offsetHeight * 2;
             const cardTheme = media.cardColor || getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim();
             drawWaveform(canvas, media.waveformData, 0, cardTheme);
 
@@ -515,33 +606,37 @@
             window.addEventListener('mouseup', () => { isDragging = false; });
         }
 
-        // ==========================================
-        // 全局音频播放控制器
-        // ==========================================
         let audioCtx, analyser, dataArray;
         let smoothedBass = 0, smoothedMid = 0, smoothedTreble = 0, kickPulse = 0;
         const globalPlayer = document.getElementById('global-player');
         
-        const gpAudio = new Audio(); gpAudio.crossOrigin = "anonymous";
+        const gpAudio = new Audio();
+        if (location.protocol !== 'file:') {
+            gpAudio.crossOrigin = "anonymous";
+        }
         let activeMediaEl = gpAudio;
         let currentMediaId = null, currentTrackData = null;
 
         function ensureAudioContext() {
-            if (!audioCtx) {
-                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-                analyser = audioCtx.createAnalyser();
-                analyser.fftSize = 512;
-                dataArray = new Uint8Array(analyser.frequencyBinCount);
-            }
-            if (audioCtx.state === 'suspended') {
-                audioCtx.resume().catch(() => {});
+            try {
+                if (!audioCtx) {
+                    audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                    analyser = audioCtx.createAnalyser();
+                    analyser.fftSize = 512;
+                    dataArray = new Uint8Array(analyser.frequencyBinCount);
+                }
+                if (audioCtx.state === 'suspended') {
+                    audioCtx.resume().catch(() => {});
+                }
+            } catch (err) {
+                console.warn('AudioContext 初始化受限:', err);
             }
         }
 
         function initAudioSource(audioEl) {
             ensureAudioContext();
             try {
-                if (!audioEl._hasAudioSource) {
+                if (audioCtx && analyser && !audioEl._hasAudioSource) {
                     const source = audioCtx.createMediaElementSource(audioEl);
                     source.connect(analyser);
                     analyser.connect(audioCtx.destination);
@@ -552,24 +647,28 @@
 
         function analyzeAudio() {
             if (!analyser || !audioCtx || (activeMediaEl && activeMediaEl.paused)) {
-                smoothedBass *= 0.9; smoothedMid *= 0.9; smoothedTreble *= 0.9; kickPulse *= 0.9; return;
+                smoothedBass *= 0.9; smoothedMid *= 0.9; smoothedTreble *= 0.9; kickPulse *= 0.9; 
+                return;
             }
-            analyser.getByteFrequencyData(dataArray);
-            let bSum = 0, mSum = 0, tSum = 0;
-            for(let i=0; i<15; i++) bSum += dataArray[i];
-            for(let i=15; i<60; i++) mSum += dataArray[i];
-            for(let i=60; i<150; i++) tSum += dataArray[i];
-            let targetBass = bSum / 15 / 255;
-            if (targetBass > smoothedBass + 0.08) kickPulse = 1.0;
-            kickPulse *= 0.85;
-            smoothedBass += (targetBass - smoothedBass) * 0.15;
-            smoothedMid += ((mSum / 45 / 255) - smoothedMid) * 0.15;
-            smoothedTreble += ((tSum / 90 / 255) - smoothedTreble) * 0.2;
+            try {
+                analyser.getByteFrequencyData(dataArray);
+                let bSum = 0, mSum = 0, tSum = 0;
+                for(let i=0; i<15; i++) bSum += dataArray[i];
+                for(let i=15; i<60; i++) mSum += dataArray[i];
+                for(let i=60; i<150; i++) tSum += dataArray[i];
+                let targetBass = bSum / 15 / 255;
+                if (targetBass > smoothedBass + 0.08) kickPulse = 1.0;
+                kickPulse *= 0.85;
+                smoothedBass += (targetBass - smoothedBass) * 0.15;
+                smoothedMid += ((mSum / 45 / 255) - smoothedMid) * 0.15;
+                smoothedTreble += ((tSum / 90 / 255) - smoothedTreble) * 0.2;
+            } catch(err) {}
         }
 
         function playGlobalMedia(mediaId) {
             ensureAudioContext();
-            const media = mediaFiles.find(m => m.id === mediaId); if (!media) return;
+            const media = mediaFiles.find(m => m.id === mediaId); 
+            if (!media) return;
 
             if (activeMediaEl && !activeMediaEl.paused && currentMediaId !== mediaId) {
                 activeMediaEl.pause();
@@ -664,9 +763,18 @@
             gpAudio.volume = vol;
         });
 
-        const eqCanvas = document.getElementById('eq-canvas'); const eqCtx = eqCanvas.getContext('2d'); let eqAnimationId;
-        function resizeEQCanvas() { eqCanvas.width = eqCanvas.offsetWidth * 2; eqCanvas.height = eqCanvas.offsetHeight * 2; }
-        function startEQAnimation() { cancelAnimationFrame(eqAnimationId); resizeEQCanvas(); animateEQ(); }
+        const eqCanvas = document.getElementById('eq-canvas'); 
+        const eqCtx = eqCanvas.getContext('2d'); 
+        let eqAnimationId;
+        function resizeEQCanvas() { 
+            eqCanvas.width = eqCanvas.offsetWidth * 2; 
+            eqCanvas.height = eqCanvas.offsetHeight * 2; 
+        }
+        function startEQAnimation() { 
+            cancelAnimationFrame(eqAnimationId); 
+            resizeEQCanvas(); 
+            animateEQ(); 
+        }
         function animateEQ() {
             eqAnimationId = requestAnimationFrame(animateEQ); 
             if (!analyser || !audioCtx || (activeMediaEl && activeMediaEl.paused)) return;
@@ -676,40 +784,66 @@
             eqCtx.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
             const barCount = 32, barWidth = eqCanvas.width / barCount, step = Math.floor(bufferLength / barCount);
             for (let i = 0; i < barCount; i++) {
-                let sum = 0; for (let j = 0; j < step; j++) sum += eqData[i * step + j];
+                let sum = 0; 
+                for (let j = 0; j < step; j++) sum += eqData[i * step + j];
                 const barHeight = (sum / step / 255) * eqCanvas.height * 0.9;
                 const gradient = eqCtx.createLinearGradient(0, eqCanvas.height, 0, eqCanvas.height - barHeight);
                 gradient.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue('--theme-color'));
                 gradient.addColorStop(1, hexToRgbaStr(getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim(), 0.3));
-                eqCtx.fillStyle = gradient; eqCtx.fillRect(i * barWidth + 2, eqCanvas.height - barHeight, barWidth - 4, barHeight);
+                eqCtx.fillStyle = gradient; 
+                eqCtx.fillRect(i * barWidth + 2, eqCanvas.height - barHeight, barWidth - 4, barHeight);
             }
         }
 
-        // 20 大背景渲染引擎
-        const canvas = document.getElementById('bg-canvas'); const ctx = canvas.getContext('2d');
+        const canvas = document.getElementById('bg-canvas'); 
+        const ctx = canvas.getContext('2d');
         let engineData = [], animationId, time = 0, mousePhys = { action: 0 };
         let currentPalette = ['#1e3a8a', '#06b6d4', '#fbbf24', '#9ca3af'], currentEngine = 0, currentDensity = 300;
 
-        window.addEventListener('mousedown', (e) => { if (e.button === 0) mousePhys.action = 1; else if (e.button === 2) mousePhys.action = -1; });
+        window.addEventListener('mousedown', (e) => { 
+            if (e.button === 0) mousePhys.action = 1; 
+            else if (e.button === 2) mousePhys.action = -1; 
+        });
         window.addEventListener('mouseup', () => { mousePhys.action = 0; });
 
         function switchBackgroundEngine(customPalette = null, overrideEngine = null) {
-            cancelAnimationFrame(animationId); engineData = []; canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            cancelAnimationFrame(animationId); 
+            engineData = []; 
+            canvas.width = window.innerWidth; 
+            canvas.height = window.innerHeight;
             const engineType = overrideEngine !== null ? overrideEngine : currentEngine;
             const palette = customPalette || currentPalette;
             const numParticles = engineType === 0 ? currentDensity / 2 : currentDensity;
             for(let i=0; i < numParticles; i++) {
-                engineData.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, baseX: Math.random() * canvas.width, baseY: Math.random() * canvas.height, color: palette[Math.floor(Math.random() * palette.length)], size: Math.random() * 2 + 0.5, angle: Math.random() * Math.PI * 2, life: Math.random() * 100, phase: Math.random() * Math.PI * 2 });
+                engineData.push({ 
+                    x: Math.random() * canvas.width, 
+                    y: Math.random() * canvas.height, 
+                    vx: (Math.random()-0.5)*2, 
+                    vy: (Math.random()-0.5)*2, 
+                    baseX: Math.random() * canvas.width, 
+                    baseY: Math.random() * canvas.height, 
+                    color: palette[Math.floor(Math.random() * palette.length)], 
+                    size: Math.random() * 2 + 0.5, 
+                    angle: Math.random() * Math.PI * 2, 
+                    life: Math.random() * 100, 
+                    phase: Math.random() * Math.PI * 2 
+                });
             }
             animateBackground(engineType);
         }
 
         function animateBackground(engineType) {
             animationId = requestAnimationFrame(() => animateBackground(engineType));
-            time += 0.01; analyzeAudio();
+            time += 0.01; 
+            analyzeAudio();
             if ([1,2,3,5,6,11,14,18].includes(engineType)) {
-                ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0,0,0, 0.08)'; ctx.fillRect(0,0, canvas.width, canvas.height); ctx.globalCompositeOperation = 'source-over';
-            } else { ctx.clearRect(0,0, canvas.width, canvas.height); }
+                ctx.globalCompositeOperation = 'destination-out'; 
+                ctx.fillStyle = 'rgba(0,0,0, 0.08)'; 
+                ctx.fillRect(0,0, canvas.width, canvas.height); 
+                ctx.globalCompositeOperation = 'source-over';
+            } else { 
+                ctx.clearRect(0,0, canvas.width, canvas.height); 
+            }
 
             engineData.forEach(p => {
                 let dx = mouseX - p.x, dy = mouseY - p.y, dist = Math.hypot(dx, dy);
@@ -723,10 +857,15 @@
 
                 switch(engineType) {
                     case 0:
-                        p.x += Math.cos(p.angle) * (0.8 + smoothedBass * 3 + kickPulse * 3); p.y += Math.sin(p.angle) * (0.8 + smoothedBass * 3 + kickPulse * 3);
+                        p.x += Math.cos(p.angle) * (0.8 + smoothedBass * 3 + kickPulse * 3); 
+                        p.y += Math.sin(p.angle) * (0.8 + smoothedBass * 3 + kickPulse * 3);
                         p.angle += (Math.random() - 0.5) * 0.1;
                         if (dist < 200 && mousePhys.action === 0) p.angle += Math.atan2(dy, dx) * 0.02;
-                        ctx.arc(p.x, p.y, p.size + smoothedBass*2 + kickPulse*3, 0, Math.PI*2); ctx.fillStyle = p.color; ctx.globalAlpha = 0.8; ctx.fill(); ctx.globalAlpha = 1;
+                        ctx.arc(p.x, p.y, p.size + smoothedBass*2 + kickPulse*3, 0, Math.PI*2); 
+                        ctx.fillStyle = p.color; 
+                        ctx.globalAlpha = 0.8; 
+                        ctx.fill(); 
+                        ctx.globalAlpha = 1;
                         break;
                     case 1:
                         p.angle += (Math.sin(p.x * 0.002 + time) + Math.cos(p.y * 0.002 + time)) * 0.1;
@@ -835,8 +974,12 @@
                     for(let j=i+1; j<engineData.length; j++) {
                         let d = Math.hypot(engineData[i].x - engineData[j].x, engineData[i].y - engineData[j].y);
                         if(d < connectDist) { 
-                            ctx.beginPath(); ctx.strokeStyle = hexToRgbaStr(engineData[i].color, 0.8 - d/connectDist); 
-                            ctx.lineWidth = 0.8 + kickPulse * 2; ctx.moveTo(engineData[i].x, engineData[i].y); ctx.lineTo(engineData[j].x, engineData[j].y); ctx.stroke(); 
+                            ctx.beginPath(); 
+                            ctx.strokeStyle = hexToRgbaStr(engineData[i].color, 0.8 - d/connectDist); 
+                            ctx.lineWidth = 0.8 + kickPulse * 2; 
+                            ctx.moveTo(engineData[i].x, engineData[i].y); 
+                            ctx.lineTo(engineData[j].x, engineData[j].y); 
+                            ctx.stroke(); 
                         }
                     }
                 }
@@ -844,18 +987,22 @@
         }
 
         window.addEventListener('resize', () => { 
-            switchBackgroundEngine(); resizeEQCanvas(); 
+            switchBackgroundEngine(); 
+            resizeEQCanvas(); 
             mediaFiles.forEach(m => { if(m.type === 'audio') initCardWaveformInteraction(m); });
         });
 
         window.addEventListener('DOMContentLoaded', () => {
             let initialConfig = null;
-            if (typeof HAKKI_CONFIG !== 'undefined') initialConfig = HAKKI_CONFIG;
-            else {
-                const localStr = localStorage.getItem('HAKKI_LOCAL_CACHE');
-                if (localStr) initialConfig = JSON.parse(localStr);
+            if (typeof HAKKI_CONFIG !== 'undefined' && HAKKI_CONFIG) {
+                initialConfig = HAKKI_CONFIG;
+            } else {
+                try {
+                    const localStr = localStorage.getItem('HAKKI_LOCAL_CACHE');
+                    if (localStr) initialConfig = JSON.parse(localStr);
+                } catch(e) {}
             }
-            if (initialConfig) applyConfig(initialConfig);
+            applyConfig(initialConfig || DEFAULT_FALLBACK_CONFIG);
         });
     </script>
 </body>
