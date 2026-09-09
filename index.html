@@ -1,0 +1,862 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>音频响应视觉作品集 | hakki</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --theme-color: #8b5cf6; --theme-rgb: 139, 92, 246;
+            --bg-color: #050505; --bg-rgb: 5, 5, 5;
+            --text-main: #f3f4f6; --text-sub: #9ca3af;
+            --card-color-hex: #111318; --card-opacity: 0.6;
+            --card-bg: rgba(17, 19, 24, 0.6); --card-border: rgba(255, 255, 255, 0.08);
+            --module-glow-size: 0px; --module-glow-opacity: 0; --radius-lg: 20px;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+
+        body { cursor: none; font-family: 'Outfit', -apple-system, sans-serif; background-color: transparent; color: var(--text-main); transition: color 0.5s ease; overflow-x: hidden; min-height: 100vh; padding-bottom: 140px; }
+        a, button, select, .ui-interactive { cursor: none !important; }
+
+        #bg-media-container { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -3; overflow: hidden; pointer-events: none; background: #000; }
+        .bg-media-item { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity 1.2s cubic-bezier(0.25, 1, 0.5, 1); }
+        .bg-media-item.active { opacity: 1; }
+        #bg-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -2; pointer-events: none; background-color: var(--bg-color); transition: background-color 0.8s ease, opacity 0.5s ease; }
+
+        #cursor-dot { position: fixed; top: 0; left: 0; width: 6px; height: 6px; background: var(--theme-color); border-radius: 50%; pointer-events: none; z-index: 9999; transform: translate(-50%, -50%); transition: background 0.2s, transform 0.1s; }
+        #cursor-ring { position: fixed; top: 0; left: 0; width: 32px; height: 32px; border: 1.5px solid var(--theme-color); border-radius: 50%; pointer-events: none; z-index: 9998; transform: translate(-50%, -50%); transition: width 0.3s cubic-bezier(0.16, 1, 0.3, 1), height 0.3s cubic-bezier(0.16, 1, 0.3, 1), background 0.2s, border-color 0.2s; }
+        body.is-hovering #cursor-ring { width: 50px; height: 50px; background: rgba(var(--theme-rgb), 0.1); border-color: rgba(var(--theme-rgb), 0.5); }
+        body.is-hovering #cursor-dot { transform: translate(-50%, -50%) scale(0.5); background: #fff; }
+        body.is-clicking #cursor-ring { width: 22px; height: 22px; background: rgba(var(--theme-rgb), 0.3); }
+
+        #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
+
+        header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px; padding: 25px 5% 15px; background: transparent; position: relative; z-index: 100; }
+        #dynamic-header-display { display: flex; flex-wrap: wrap; gap: 35px; align-items: flex-start; flex: 1; }
+        .info-block { display: flex; flex-direction: column; gap: 2px; transition: transform 0.3s; }
+        .info-block:hover { transform: scale(1.05); }
+        .info-block .label { font-size: 0.68rem; color: var(--text-sub); text-transform: uppercase; font-weight: 800; letter-spacing: 1.5px; }
+        .info-block .value { font-size: 1rem; font-weight: 600; color: var(--text-main); }
+        .info-block.is-title .value { font-size: 1.8rem; font-weight: 800; color: var(--theme-color); text-shadow: 0 0 calc(var(--module-glow-size) * 0.6) rgba(var(--theme-rgb), 0.6); }
+        .sub-info-blocks { margin-left: 8px; margin-top: 4px; border-left: 1.5px solid rgba(255,255,255,0.15); padding-left: 8px; }
+        .sub-info-item { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 2px; }
+
+        .container { max-width: 1300px; margin: 20px auto 40px; padding: 0 25px; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 30px; }
+        .layout-sidebar .main-content { display: grid; grid-template-columns: 240px 1fr; gap: 40px; align-items: start; }
+        .layout-sidebar .filters { flex-direction: column; align-items: stretch; position: sticky; top: 120px; margin-bottom: 0;}
+        .layout-sidebar .filter-btn { text-align: left; padding: 12px 20px; }
+
+        .filters { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 25px; justify-content: center; }
+        .filter-btn { background: var(--card-bg); backdrop-filter: blur(14px); border: 1px solid var(--card-border); padding: 8px 22px; font-weight: 600; cursor: pointer; color: var(--text-sub); position: relative; transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1); }
+        .filter-btn:hover { color: var(--text-main); border-color: var(--theme-color); transform: translateY(-2px) scale(1.04); box-shadow: 0 0 var(--module-glow-size) rgba(var(--theme-rgb), var(--module-glow-opacity)); }
+        .filter-btn.active { background: var(--theme-color); color: white; border-color: var(--theme-color); box-shadow: 0 0 calc(var(--module-glow-size)*1.5) rgba(var(--theme-rgb), calc(var(--module-glow-opacity)*1.5)); }
+
+        .media-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 25px; width: 100%; transition: all 0.3s;}
+        .media-card { background: var(--card-bg); backdrop-filter: blur(16px); border: 1px solid var(--card-border); display: flex; flex-direction: column; justify-content: space-between; color: var(--text-main); transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1); position: relative; padding: 22px; }
+        .media-card:hover { transform: translateY(-4px) scale(1.01); border-color: rgba(var(--theme-rgb), 0.8); box-shadow: 0 20px 50px rgba(0,0,0,0.5), 0 0 var(--module-glow-size) rgba(var(--theme-rgb), var(--module-glow-opacity)); z-index: 5; }
+
+        .global-player { position: fixed; bottom: -140px; left: 30px; right: 30px; height: 90px; background: var(--card-bg); backdrop-filter: blur(24px); border: 1px solid var(--card-border); z-index: 500; transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1); display: flex; align-items: center; padding: 0 28px; gap: 20px; box-shadow: 0 20px 50px rgba(0,0,0,0.6); }
+        .global-player.active { bottom: 25px; }
+
+        /* 形状全联动系统 */
+        [data-card-shape="modern"] .media-card { border-radius: 20px; }
+        [data-card-shape="modern"] .filter-btn { border-radius: 30px; }
+        [data-card-shape="modern"] .global-player { border-radius: 24px; }
+        [data-card-shape="modern"] .play-toggle, [data-card-shape="modern"] .global-play-btn { border-radius: 50%; }
+
+        [data-card-shape="cyber"] .media-card { border-radius: 0; clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 22px 100%, 0 calc(100% - 22px)); border-left: 3px solid var(--theme-color); }
+        [data-card-shape="cyber"] .filter-btn { border-radius: 0; clip-path: polygon(0 0, calc(100% - 10px) 0, 100% 10px, 100% 100%, 10px 100%, 0 calc(100% - 10px)); border-left: 2px solid var(--theme-color); }
+        [data-card-shape="cyber"] .global-player { border-radius: 0; clip-path: polygon(25px 0, calc(100% - 25px) 0, 100% 25px, 100% 100%, 0 100%, 0 25px); border-top: 2px solid var(--theme-color); }
+        [data-card-shape="cyber"] .play-toggle, [data-card-shape="cyber"] .global-play-btn { border-radius: 0; clip-path: polygon(0 0, calc(100% - 6px) 0, 100% 6px, 100% 100%, 6px 100%, 0 calc(100% - 6px)); }
+
+        [data-card-shape="sharp"] .media-card, [data-card-shape="sharp"] .filter-btn, [data-card-shape="sharp"] .global-player, [data-card-shape="sharp"] .play-toggle, [data-card-shape="sharp"] .global-play-btn { border-radius: 0px !important; clip-path: none !important; }
+        [data-card-shape="sharp"] .media-card, [data-card-shape="sharp"] .global-player { border-width: 2px; }
+
+        [data-card-shape="pill"] .media-card { border-radius: 36px; }
+        [data-card-shape="pill"] .filter-btn { border-radius: 40px; }
+        [data-card-shape="pill"] .global-player { border-radius: 45px; }
+        [data-card-shape="pill"] .play-toggle, [data-card-shape="pill"] .global-play-btn { border-radius: 50%; }
+
+        [data-card-shape="origami"] .media-card { border-radius: 4px; clip-path: polygon(20px 0, 100% 0, 100% calc(100% - 20px), calc(100% - 20px) 100%, 0 100%, 0 20px); }
+        [data-card-shape="origami"] .filter-btn { border-radius: 2px; clip-path: polygon(10px 0, 100% 0, 100% calc(100% - 10px), calc(100% - 10px) 100%, 0 100%, 0 10px); }
+        [data-card-shape="origami"] .global-player { border-radius: 4px; clip-path: polygon(25px 0, calc(100% - 25px) 0, 100% 25px, 100% 100%, 0 100%, 0 25px); }
+        [data-card-shape="origami"] .play-toggle, [data-card-shape="origami"] .global-play-btn { border-radius: 2px; clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px); }
+
+        [data-card-shape="prism"] .media-card, [data-card-shape="prism"] .global-player { border-radius: 16px; border: 1px solid rgba(var(--theme-rgb), 0.45); background: linear-gradient(135deg, rgba(255,255,255,0.08) 0%, rgba(var(--bg-rgb), 0.6) 100%); box-shadow: 0 15px 40px rgba(0,0,0,0.5), inset 0 0 15px rgba(var(--theme-rgb), 0.15); }
+        [data-card-shape="prism"] .filter-btn { border-radius: 12px; border: 1px solid rgba(var(--theme-rgb), 0.3); background: linear-gradient(135deg, rgba(255,255,255,0.06) 0%, rgba(var(--bg-rgb), 0.5) 100%); }
+        [data-card-shape="prism"] .play-toggle, [data-card-shape="prism"] .global-play-btn { border-radius: 12px; }
+
+        .media-card[data-custom-color="true"] { --card-theme-color: #8b5cf6; }
+        .media-card[data-custom-color="true"] .media-type-tag, .media-card[data-custom-color="true"] .play-toggle { background: var(--card-theme-color); }
+        .media-card[data-custom-color="true"]:hover { border-color: var(--card-theme-color); }
+
+        /* 列表布局排版 */
+        .media-grid.list-view { grid-template-columns: 1fr; gap: 16px; }
+        .media-grid.list-view .media-card { flex-direction: row; align-items: center; padding: 16px 28px; gap: 24px; }
+        
+        .media-grid.list-view .media-header { 
+            margin-bottom: 0; width: 190px; flex-shrink: 0; display: flex; flex-direction: column; gap: 4px; 
+        }
+        .media-grid.list-view .media-author { margin-bottom: 0; }
+        
+        .media-grid.list-view .audio-player-ui { 
+            flex: 1; margin-top: 0; width: 100%; display: flex; align-items: center; gap: 16px; background: transparent; padding: 0; 
+        }
+        
+        .media-grid.list-view .card-footer { 
+            margin-top: 0; padding-top: 0; border-top: none; flex-shrink: 0; width: 90px; display: flex; justify-content: flex-end; 
+        }
+
+        .media-header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 10px; }
+        .media-title { font-weight: 800; font-size: 1.15rem; line-height: 1.3; }
+        .media-author { font-size: 0.8rem; color: var(--text-sub); font-weight: 600; margin-bottom: 4px; }
+        .media-type-tag { font-size: 0.7rem; padding: 3px 8px; border-radius: 8px; font-weight: 800; background: rgba(var(--theme-rgb), 0.15); color: var(--theme-color); }
+
+        .media-notes-wrap { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; margin-top: 2px; }
+        .media-note-pill { font-size: 0.7rem; color: var(--theme-color); background: rgba(var(--theme-rgb), 0.12); border: 1px solid rgba(var(--theme-rgb), 0.25); padding: 2px 8px; border-radius: 12px; font-weight: 500; white-space: nowrap; }
+
+        .audio-player-ui { display: flex; align-items: center; gap: 14px; background: rgba(128,128,128,0.12); padding: 12px; border-radius: 12px; transition: 0.3s; }
+        .play-toggle { width: 44px; height: 44px; border: none; background: var(--theme-color); color: white; font-size: 1rem; transition: 0.3s; flex-shrink: 0; }
+        .play-toggle:hover { transform: scale(1.12); box-shadow: 0 0 20px rgba(var(--theme-rgb), 0.8); }
+        .progress-container { flex: 1; display: flex; flex-direction: column; gap: 6px; position: relative; width: 100%; }
+        .time-info { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-sub); font-weight: 600; padding: 0 2px; }
+        
+        .card-waveform-wrap { width: 100%; height: 50px; position: relative; cursor: pointer; border-radius: 8px; overflow: hidden; background: rgba(0,0,0,0.3); border: 1px solid rgba(255,255,255,0.06); transition: border-color 0.2s, background 0.2s; }
+        .card-waveform-wrap:hover { border-color: rgba(var(--theme-rgb), 0.4); background: rgba(0,0,0,0.4); }
+        .card-waveform-canvas { width: 100%; height: 100%; display: block; }
+        .card-waveform-progress { position: absolute; top: 0; left: 0; height: 100%; width: 0%; background: linear-gradient(90deg, rgba(var(--theme-rgb), 0.15), rgba(var(--theme-rgb), 0.45)); border-right: 2px solid var(--theme-color); pointer-events: none; }
+
+        .card-footer { display: flex; justify-content: flex-end; align-items: center; margin-top: 15px; padding-top: 15px; border-top: 1px dashed var(--card-border); gap: 10px; }
+        .cat-label { font-size: 0.75rem; color: var(--text-sub); font-weight: 600; background: rgba(128,128,128,0.15); padding: 5px 12px; border-radius: 20px; white-space: nowrap; }
+
+        .player-track-info { width: 220px; flex-shrink: 0; display: flex; flex-direction: column; gap: 2px; }
+        .player-track-title { font-weight: 800; font-size: 1rem; color: var(--text-main); }
+        .player-track-author { font-size: 0.8rem; color: var(--text-sub); }
+        .player-track-notes { font-size: 0.7rem; color: var(--theme-color); margin-top: 2px; max-height: 30px; overflow-y: auto; }
+        .player-controls { display: flex; align-items: center; gap: 15px; flex-shrink: 0; }
+        .global-play-btn { width: 48px; height: 48px; border: none; background: var(--theme-color); color: white; font-size: 1.1rem; cursor: pointer; transition: all 0.3s; }
+        .global-play-btn:hover { transform: scale(1.1); box-shadow: 0 0 25px rgba(var(--theme-rgb), 0.8); }
+        .player-progress-wrap { flex: 1; display: flex; flex-direction: column; gap: 5px; }
+        .player-progress-bar { width: 100%; height: 6px; background: rgba(128,128,128,0.3); border-radius: 3px; cursor: pointer; position: relative; user-select: none; }
+        .player-progress-fill { height: 100%; background: var(--theme-color); border-radius: 3px; width: 0%; position: absolute; left: 0; top: 0; pointer-events: none; }
+        .player-progress-thumb { position: absolute; top: 50%; transform: translate(-50%, -50%); width: 14px; height: 14px; border-radius: 50%; background: var(--theme-color); box-shadow: 0 0 10px rgba(var(--theme-rgb), 0.8); pointer-events: none; opacity: 0; transition: opacity 0.2s; }
+        .player-progress-bar:hover .player-progress-thumb { opacity: 1; }
+        .player-time { display: flex; justify-content: space-between; font-size: 0.75rem; color: var(--text-sub); font-weight: 600; }
+        #eq-canvas { width: 180px; height: 45px; flex-shrink: 0; }
+        .player-volume-wrap { display: flex; align-items: center; gap: 8px; width: 100px; flex-shrink: 0; }
+        input[type="range"].volume-bar { -webkit-appearance: none; width: 100%; height: 4px; background: rgba(128,128,128,0.3); border-radius: 2px; }
+        input[type="range"].volume-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--theme-color); transition: 0.2s;}
+    </style>
+</head>
+<body data-player-style="glass" data-card-shape="modern">
+
+    <div id="bg-media-container"></div>
+    <div id="bg-overlay"></div>
+    <div id="cursor-dot"></div>
+    <div id="cursor-ring"></div>
+    <canvas id="bg-canvas"></canvas>
+
+    <header class="ui-interactive">
+        <div id="dynamic-header-display"></div>
+    </header>
+
+    <div class="container" id="main-container">
+        <div class="main-content">
+            <div class="filters" id="filter-container"></div>
+            <div class="media-grid list-view" id="media-grid"></div>
+        </div>
+    </div>
+
+    <!-- 全局悬浮底栏播放器 -->
+    <div class="global-player" id="global-player">
+        <div class="player-track-info">
+            <div class="player-track-title" id="gp-title">未选择曲目</div>
+            <div class="player-track-author" id="gp-author">--</div>
+            <div class="player-track-notes" id="gp-notes"></div>
+        </div>
+        <div class="player-controls">
+            <button class="global-play-btn ui-interactive" id="gp-play-btn">▶</button>
+        </div>
+        <div class="player-progress-wrap">
+            <div class="player-progress-bar ui-interactive" id="gp-progress">
+                <div class="player-progress-fill" id="gp-progress-fill"></div>
+                <div class="player-progress-thumb" id="gp-progress-thumb"></div>
+            </div>
+            <div class="player-time">
+                <span id="gp-current">0:00</span>
+                <span id="gp-duration">0:00</span>
+            </div>
+        </div>
+        <canvas id="eq-canvas"></canvas>
+        <div class="player-volume-wrap">
+            <span style="font-size: 0.8rem; color: var(--text-sub);">🔊</span>
+            <input type="range" class="volume-bar ui-interactive" id="gp-volume" min="0" max="1" step="0.01" value="1" style="flex:1;">
+        </div>
+    </div>
+
+    <script src="config.js" onerror="console.log('未检测到 config.js，将读取浏览器缓存或等待管理页广播')"></script>
+
+    <script>
+        const syncChannel = new BroadcastChannel('hakki_channel');
+
+        const dbPromise = new Promise((resolve, reject) => {
+            const request = indexedDB.open('HakkiLocalMediaDB', 1);
+            request.onsuccess = e => resolve(e.target.result);
+            request.onerror = e => reject(e);
+        });
+
+        async function getFileFromDB(id, type = 'audio/mp3') {
+            const db = await dbPromise;
+            return new Promise((resolve) => {
+                const tx = db.transaction('files', 'readonly');
+                const req = tx.objectStore('files').get(id);
+                req.onsuccess = () => {
+                    const raw = req.result;
+                    if (!raw) return resolve(null);
+                    resolve(new Blob([raw], { type: raw.type || type }));
+                };
+                req.onerror = () => resolve(null);
+            });
+        }
+
+        let infoBlocks = [];
+        let categoryBlocks = [];
+        let mediaFiles = [];
+        let soundEffects = { click: [], hover: [], nav: [], volume: 0.6 };
+        let currentFilter = '全部展示';
+        let userInteracted = false;
+
+        // ==========================================
+        // 🔊 交互音效随机播放引擎 (核心兼容修复)
+        // ==========================================
+        const sfxCache = { click: [], hover: [], nav: [] };
+
+        async function preloadSFX() {
+            for (let type of ['click', 'hover', 'nav']) {
+                sfxCache[type] = [];
+                const items = soundEffects[type] || [];
+                for (let item of items) {
+                    // 兼容处理：既支持存入对象 { id: ... }，也支持存入纯字符串 ID
+                    const sfxId = (typeof item === 'object' && item !== null) ? item.id : item;
+                    if (!sfxId) continue;
+                    
+                    const blob = await getFileFromDB(sfxId, 'audio/mp3');
+                    if (blob) {
+                        const url = URL.createObjectURL(blob);
+                        sfxCache[type].push(url);
+                    }
+                }
+            }
+        }
+
+        function playRandomSFX(type) {
+            const list = sfxCache[type];
+            if (!list || list.length === 0) return;
+            // 未发生点击交互前，浏览器会拦截纯鼠标滑过的音效，避免抛出警告
+            if (type === 'hover' && !userInteracted) return;
+
+            const chosenUrl = list[Math.floor(Math.random() * list.length)];
+            const audio = new Audio(chosenUrl);
+            audio.volume = soundEffects.volume !== undefined ? parseFloat(soundEffects.volume) : 0.6;
+            audio.play().catch(() => {});
+        }
+
+        // 全局交互监听：点击任何交互项触发点击音效，同时解锁浏览器音频限制
+        window.addEventListener('pointerdown', (e) => {
+            userInteracted = true;
+            if (e.target.closest('button, .filter-btn, .play-toggle, .global-play-btn, .card-waveform-wrap, input[type="range"]')) {
+                playRandomSFX('click');
+            }
+        });
+
+        function hexToRgbVals(hex) { if(!hex) return '255,255,255'; let r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16); return `${r}, ${g}, ${b}`; }
+        function hexToRgbaStr(hex, alpha) { return `rgba(${hexToRgbVals(hex)}, ${alpha})`; }
+
+        async function applyConfig(cfg) {
+            if (!cfg) return;
+            infoBlocks = cfg.infoBlocks || [];
+            categoryBlocks = cfg.categoryBlocks || [];
+            mediaFiles = cfg.mediaFiles || [];
+            soundEffects = cfg.soundEffects || { click: [], hover: [], nav: [], volume: 0.6 };
+
+            await preloadSFX();
+
+            if (cfg.visuals) {
+                const v = cfg.visuals;
+                document.documentElement.style.setProperty('--theme-color', v.theme);
+                document.documentElement.style.setProperty('--theme-rgb', hexToRgbVals(v.theme));
+                document.documentElement.style.setProperty('--bg-color', v.bg);
+                document.documentElement.style.setProperty('--bg-rgb', hexToRgbVals(v.bg));
+                
+                const cardOp = v.cardOpacity !== undefined ? (v.cardOpacity / 100) : 0.6;
+                document.documentElement.style.setProperty('--card-bg', hexToRgbaStr(v.card, cardOp));
+                document.documentElement.style.setProperty('--text-main', v.text);
+                document.documentElement.style.setProperty('--text-sub', hexToRgbaStr(v.text, 0.6));
+
+                document.documentElement.style.setProperty('--module-glow-size', (v.glow || 0) + 'px');
+                document.documentElement.style.setProperty('--module-glow-opacity', (v.glow || 0) > 0 ? ((v.glow) / 100) * 0.8 : 0);
+
+                const container = document.getElementById('main-container');
+                v.layout === 'sidebar' ? container.classList.add('layout-sidebar') : container.classList.remove('layout-sidebar');
+
+                const mediaGrid = document.getElementById('media-grid');
+                v.mediaLayout === 'grid' ? mediaGrid.classList.remove('list-view') : mediaGrid.classList.add('list-view');
+
+                document.body.setAttribute('data-card-shape', v.cardShape || 'modern');
+                document.body.setAttribute('data-player-style', v.playerStyle || 'glass');
+
+                if (v.bgOverlayOpacity !== undefined) {
+                    document.getElementById('bg-overlay').style.opacity = v.bgOverlayOpacity / 100;
+                }
+
+                if (v.bgDbId) {
+                    const bgFile = await getFileFromDB(v.bgDbId, v.globalBgType === 'video' ? 'video/mp4' : 'image/jpeg');
+                    if (bgFile) {
+                        const localBlobUrl = URL.createObjectURL(bgFile);
+                        setGlobalBackground(v.globalBgType || 'auto', localBlobUrl);
+                    }
+                } else if (v.globalBgUrl) {
+                    setGlobalBackground(v.globalBgType || 'auto', v.globalBgUrl);
+                } else {
+                    clearGlobalBackground();
+                }
+
+                currentPalette = v.palette || ['#1e3a8a', '#06b6d4', '#fbbf24', '#9ca3af'];
+                currentEngine = parseInt(v.bgEngine || 0);
+                currentDensity = parseInt(v.density || 300);
+                switchBackgroundEngine();
+            }
+
+            for (let m of mediaFiles) {
+                if (m.dbId && !m.tempUrl) {
+                    const f = await getFileFromDB(m.dbId, 'audio/mp3');
+                    if (f) m.tempUrl = URL.createObjectURL(f);
+                }
+            }
+
+            renderInfoDisplay();
+            renderFilters();
+            renderMedia();
+        }
+
+        syncChannel.onmessage = (e) => {
+            if (e.data && e.data.type === 'SYNC_CONFIG') applyConfig(e.data.payload);
+        };
+
+        window.addEventListener('storage', (e) => {
+            if (e.key === 'HAKKI_LOCAL_CACHE' && e.newValue) applyConfig(JSON.parse(e.newValue));
+        });
+
+        // 鼠标
+        const cursorDot = document.getElementById('cursor-dot'); const cursorRing = document.getElementById('cursor-ring');
+        let mouseX = -1000, mouseY = -1000, ringX = -1000, ringY = -1000;
+        function animateCursor() { ringX += (mouseX - ringX) * 0.2; ringY += (mouseY - ringY) * 0.2; cursorDot.style.left = mouseX + 'px'; cursorDot.style.top = mouseY + 'px'; cursorRing.style.left = ringX + 'px'; cursorRing.style.top = ringY + 'px'; requestAnimationFrame(animateCursor); } animateCursor();
+        window.addEventListener('mousemove', (e) => { mouseX = e.clientX; mouseY = e.clientY; });
+
+        let activeBgMedia = null;
+        function detectMediaType(url) { return /\.(mp4|webm|ogg|mov)$/i.test(url.split('?')[0].toLowerCase()) ? 'video' : 'image'; }
+        function setGlobalBackground(type, url) {
+            if (!url) return;
+            const container = document.getElementById('bg-media-container');
+            if (type === 'auto') type = detectMediaType(url);
+            let newEl;
+            if (type === 'image') { newEl = document.createElement('img'); newEl.src = url; }
+            else { newEl = document.createElement('video'); newEl.autoplay = true; newEl.loop = true; newEl.muted = true; newEl.playsInline = true; newEl.src = url; }
+            newEl.className = 'bg-media-item'; container.appendChild(newEl); void newEl.offsetWidth; newEl.classList.add('active');
+            if (activeBgMedia) {
+                const oldEl = activeBgMedia; oldEl.classList.remove('active');
+                setTimeout(() => { if (oldEl.parentNode) { oldEl.parentNode.removeChild(oldEl); if(oldEl.tagName==='VIDEO'){ oldEl.pause(); oldEl.removeAttribute('src'); oldEl.load(); } } }, 1200);
+            }
+            activeBgMedia = newEl;
+        }
+        function clearGlobalBackground() {
+            if (activeBgMedia) { activeBgMedia.classList.remove('active'); const oldEl = activeBgMedia; setTimeout(() => { if (oldEl.parentNode) oldEl.parentNode.removeChild(oldEl); }, 1200); activeBgMedia = null; }
+        }
+
+        function renderInfoDisplay() {
+            const display = document.getElementById('dynamic-header-display'); display.innerHTML = '';
+            infoBlocks.forEach(block => {
+                const div = document.createElement('div'); div.className = `info-block ui-interactive ${block.isTitle ? 'is-title' : ''}`;
+                let html = `<span class="label">${block.label}</span><span class="value">${block.value}</span>`;
+                if (block.children && block.children.length > 0) {
+                    html += '<div class="sub-info-blocks">';
+                    block.children.forEach(sub => { html += `<div class="sub-info-item">• ${sub}</div>`; });
+                    html += '</div>';
+                }
+                div.innerHTML = html; display.appendChild(div);
+            });
+        }
+
+        function renderFilters() {
+            const box = document.getElementById('filter-container'); box.innerHTML = '';
+            const allCats = ['全部展示', ...categoryBlocks.map(c => c.name)];
+            allCats.forEach(cat => {
+                const btn = document.createElement('button');
+                btn.className = `filter-btn ui-interactive ${currentFilter === cat ? 'active' : ''}`;
+                btn.innerText = cat;
+                btn.onclick = () => { 
+                    currentFilter = cat; 
+                    playRandomSFX('nav'); // 触发分类导览音效
+                    renderFilters(); 
+                    filterMediaCards(); 
+                };
+                box.appendChild(btn);
+            });
+        }
+
+        function filterMediaCards() {
+            const cards = document.querySelectorAll('.media-card'); let visibleCount = 0;
+            cards.forEach(card => {
+                if (currentFilter === '全部展示' || card.dataset.category === currentFilter) { card.style.display = 'flex'; visibleCount++; }
+                else { card.style.display = 'none'; }
+            });
+            const grid = document.getElementById('media-grid'); let emptyMsg = document.getElementById('empty-state-msg');
+            if (visibleCount === 0) {
+                if (!emptyMsg) { emptyMsg = document.createElement('div'); emptyMsg.id = 'empty-state-msg'; emptyMsg.style = "grid-column: 1/-1; text-align:center; padding: 50px; color: var(--text-sub);"; emptyMsg.innerText = "当前分类暂无展示内容"; grid.appendChild(emptyMsg); }
+            } else if (emptyMsg) { emptyMsg.remove(); }
+        }
+
+        function generatePseudoWaveform(seedStr, count = 110) {
+            let hash = 0; for(let i=0; i<seedStr.length; i++) hash = (hash << 5) - hash + seedStr.charCodeAt(i);
+            const bars = [];
+            for (let i = 0; i < count; i++) {
+                const x = Math.sin(hash + i * 0.28) * 10000;
+                bars.push(Math.floor((x - Math.floor(x)) * 75) + 20);
+            }
+            return bars;
+        }
+
+        function drawWaveform(canvas, bars, progressPercent = 0, color = '#8b5cf6') {
+            const ctx = canvas.getContext('2d'); const w = canvas.width, h = canvas.height;
+            ctx.clearRect(0, 0, w, h); const barWidth = w / bars.length;
+            bars.forEach((val, i) => {
+                const barH = (val / 100) * h * 0.85; const x = i * barWidth; const y = (h - barH) / 2;
+                ctx.fillStyle = (x / w) <= progressPercent ? color : 'rgba(255, 255, 255, 0.22)';
+                ctx.fillRect(x + 1, y, Math.max(1.5, barWidth - 2), barH);
+            });
+        }
+
+        function formatTime(sec) { if(isNaN(sec)||!isFinite(sec)) return "0:00"; const m=Math.floor(sec/60), s=Math.floor(sec%60).toString().padStart(2,'0'); return `${m}:${s}`; }
+
+        function renderMedia() {
+            const grid = document.getElementById('media-grid'); grid.innerHTML = '';
+            mediaFiles.forEach((media) => {
+                if(!media.waveformData) media.waveformData = generatePseudoWaveform(media.title + media.id);
+                const card = document.createElement('div'); card.className = 'media-card'; card.dataset.category = media.category; card.dataset.id = media.id; card.id = `media-card-${media.id}`;
+                if (media.cardColor) { card.dataset.customColor = "true"; card.style.setProperty('--card-theme-color', media.cardColor); card.style.setProperty('--card-theme-rgb', hexToRgbVals(media.cardColor)); }
+
+                // 鼠标扫过卡片触发悬浮展示音效
+                card.addEventListener('mouseenter', () => {
+                    playRandomSFX('hover');
+                });
+
+                let notesHtml = '';
+                if (media.notes && media.notes.length > 0) {
+                    notesHtml = `<div class="media-notes-wrap">` + media.notes.map(n => `<span class="media-note-pill">• ${n}</span>`).join('') + `</div>`;
+                }
+
+                let mediaContentHTML = `
+                    <div class="audio-player-ui">
+                        <button class="play-toggle ui-interactive" id="card-play-btn-${media.id}" onclick="playGlobalMedia(${media.id})">▶</button>
+                        <div class="progress-container">
+                            <div class="card-waveform-wrap ui-interactive" id="waveform-wrap-${media.id}">
+                                <canvas class="card-waveform-canvas" id="waveform-canvas-${media.id}"></canvas>
+                                <div class="card-waveform-progress" id="waveform-progress-${media.id}"></div>
+                            </div>
+                            <div class="time-info">
+                                <span id="card-time-cur-${media.id}">0:00</span>
+                                <span id="card-time-dur-${media.id}">--:--</span>
+                            </div>
+                        </div>
+                    </div>`;
+
+                card.innerHTML = `
+                    <div class="media-header">
+                        <div>
+                            <div class="media-title">${media.title}</div>
+                            <div class="media-author">Artist: ${media.author}</div>
+                            ${notesHtml}
+                        </div>
+                        <div class="media-type-tag">AUDIO</div>
+                    </div>
+                    ${mediaContentHTML}
+                    <div class="card-footer">
+                        <span class="cat-label">${media.category}</span>
+                    </div>`;
+                grid.appendChild(card);
+
+                setTimeout(() => initCardWaveformInteraction(media), 20);
+            });
+            filterMediaCards();
+        }
+
+        function initCardWaveformInteraction(media) {
+            const canvas = document.getElementById(`waveform-canvas-${media.id}`);
+            const wrap = document.getElementById(`waveform-wrap-${media.id}`);
+            if(!canvas || !wrap) return;
+
+            canvas.width = wrap.offsetWidth * 2; canvas.height = wrap.offsetHeight * 2;
+            const cardTheme = media.cardColor || getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim();
+            drawWaveform(canvas, media.waveformData, 0, cardTheme);
+
+            let isDragging = false;
+            function seekFromEvent(e) {
+                const rect = wrap.getBoundingClientRect();
+                const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+                if (currentMediaId !== media.id) playGlobalMedia(media.id);
+                if (activeMediaEl && activeMediaEl.duration) { 
+                    activeMediaEl.currentTime = pos * activeMediaEl.duration; 
+                    updateProgressUI(); 
+                }
+            }
+            wrap.addEventListener('mousedown', (e) => { isDragging = true; seekFromEvent(e); });
+            window.addEventListener('mousemove', (e) => { if (isDragging) seekFromEvent(e); });
+            window.addEventListener('mouseup', () => { isDragging = false; });
+        }
+
+        // ==========================================
+        // 全局音频播放控制器
+        // ==========================================
+        let audioCtx, analyser, dataArray;
+        let smoothedBass = 0, smoothedMid = 0, smoothedTreble = 0, kickPulse = 0;
+        const globalPlayer = document.getElementById('global-player');
+        
+        const gpAudio = new Audio(); gpAudio.crossOrigin = "anonymous";
+        let activeMediaEl = gpAudio;
+        let currentMediaId = null, currentTrackData = null;
+
+        function ensureAudioContext() {
+            if (!audioCtx) {
+                audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+                analyser = audioCtx.createAnalyser();
+                analyser.fftSize = 512;
+                dataArray = new Uint8Array(analyser.frequencyBinCount);
+            }
+            if (audioCtx.state === 'suspended') {
+                audioCtx.resume().catch(() => {});
+            }
+        }
+
+        function initAudioSource(audioEl) {
+            ensureAudioContext();
+            try {
+                if (!audioEl._hasAudioSource) {
+                    const source = audioCtx.createMediaElementSource(audioEl);
+                    source.connect(analyser);
+                    analyser.connect(audioCtx.destination);
+                    audioEl._hasAudioSource = true;
+                }
+            } catch(e) {}
+        }
+
+        function analyzeAudio() {
+            if (!analyser || !audioCtx || (activeMediaEl && activeMediaEl.paused)) {
+                smoothedBass *= 0.9; smoothedMid *= 0.9; smoothedTreble *= 0.9; kickPulse *= 0.9; return;
+            }
+            analyser.getByteFrequencyData(dataArray);
+            let bSum = 0, mSum = 0, tSum = 0;
+            for(let i=0; i<15; i++) bSum += dataArray[i];
+            for(let i=15; i<60; i++) mSum += dataArray[i];
+            for(let i=60; i<150; i++) tSum += dataArray[i];
+            let targetBass = bSum / 15 / 255;
+            if (targetBass > smoothedBass + 0.08) kickPulse = 1.0;
+            kickPulse *= 0.85;
+            smoothedBass += (targetBass - smoothedBass) * 0.15;
+            smoothedMid += ((mSum / 45 / 255) - smoothedMid) * 0.15;
+            smoothedTreble += ((tSum / 90 / 255) - smoothedTreble) * 0.2;
+        }
+
+        function playGlobalMedia(mediaId) {
+            ensureAudioContext();
+            const media = mediaFiles.find(m => m.id === mediaId); if (!media) return;
+
+            if (activeMediaEl && !activeMediaEl.paused && currentMediaId !== mediaId) {
+                activeMediaEl.pause();
+                if (currentMediaId) {
+                    const oldBtn = document.getElementById(`card-play-btn-${currentMediaId}`);
+                    if (oldBtn) oldBtn.innerText = '▶';
+                }
+            }
+
+            const isSwitchingMedia = (currentMediaId !== mediaId);
+            currentMediaId = mediaId;
+            currentTrackData = media;
+
+            const targetSrc = media.tempUrl || media.url;
+            activeMediaEl = gpAudio;
+            if (gpAudio.src !== targetSrc) gpAudio.src = targetSrc;
+            initAudioSource(gpAudio);
+
+            document.getElementById('gp-title').innerText = media.title;
+            document.getElementById('gp-author').innerText = 'Artist: ' + media.author;
+            const notesEl = document.getElementById('gp-notes');
+            notesEl.innerText = (media.notes && media.notes.length > 0) ? media.notes.join(' | ') : '';
+
+            if (media.particleEngine >= 0) {
+                switchBackgroundEngine(media.particleColors?.length >= 2 ? media.particleColors : null, media.particleEngine);
+            } else switchBackgroundEngine();
+
+            if (isSwitchingMedia || activeMediaEl.paused) {
+                activeMediaEl.play().then(() => {
+                    document.getElementById('gp-play-btn').innerText = '⏸';
+                    const cardBtn = document.getElementById(`card-play-btn-${media.id}`);
+                    if (cardBtn) cardBtn.innerText = '⏸';
+                }).catch(e => console.log('Autoplay wait:', e));
+            } else {
+                activeMediaEl.pause();
+                document.getElementById('gp-play-btn').innerText = '▶';
+                const cardBtn = document.getElementById(`card-play-btn-${media.id}`);
+                if (cardBtn) cardBtn.innerText = '▶';
+            }
+
+            activeMediaEl.ontimeupdate = updateProgressUI;
+            globalPlayer.classList.add('active');
+            startEQAnimation();
+        }
+
+        const gpProgress = document.getElementById('gp-progress'), gpProgressFill = document.getElementById('gp-progress-fill');
+        const gpProgressThumb = document.getElementById('gp-progress-thumb'), gpCurrent = document.getElementById('gp-current'), gpDuration = document.getElementById('gp-duration');
+
+        function updateProgressUI() {
+            if (!activeMediaEl) return;
+            const total = activeMediaEl.duration || 0, current = activeMediaEl.currentTime || 0;
+            const percent = total > 0 ? (current / total) * 100 : 0;
+            
+            gpProgressFill.style.width = percent + '%'; 
+            gpProgressThumb.style.left = percent + '%';
+            gpCurrent.innerText = formatTime(current); 
+            gpDuration.innerText = formatTime(total);
+
+            const cardProg = document.getElementById(`waveform-progress-${currentMediaId}`);
+            const cardCur = document.getElementById(`card-time-cur-${currentMediaId}`);
+            const cardDur = document.getElementById(`card-time-dur-${currentMediaId}`);
+            if (cardProg) cardProg.style.width = percent + '%';
+            if (cardCur) cardCur.innerText = formatTime(current);
+            if (cardDur) cardDur.innerText = formatTime(total);
+        }
+
+        gpProgress.addEventListener('click', (e) => {
+            if (!activeMediaEl || !activeMediaEl.duration) return;
+            const rect = gpProgress.getBoundingClientRect();
+            const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+            activeMediaEl.currentTime = pos * activeMediaEl.duration;
+            updateProgressUI();
+        });
+
+        document.getElementById('gp-play-btn').addEventListener('click', () => {
+            if (!activeMediaEl || !currentMediaId) return;
+            ensureAudioContext();
+            const cardBtn = document.getElementById(`card-play-btn-${currentMediaId}`);
+            if (activeMediaEl.paused) { 
+                activeMediaEl.play().catch(() => {}); 
+                document.getElementById('gp-play-btn').innerText = '⏸'; 
+                if (cardBtn) cardBtn.innerText = '⏸'; 
+            } else { 
+                activeMediaEl.pause(); 
+                document.getElementById('gp-play-btn').innerText = '▶'; 
+                if (cardBtn) cardBtn.innerText = '▶'; 
+            }
+        });
+
+        document.getElementById('gp-volume').addEventListener('input', (e) => { 
+            const vol = parseFloat(e.target.value);
+            gpAudio.volume = vol;
+        });
+
+        const eqCanvas = document.getElementById('eq-canvas'); const eqCtx = eqCanvas.getContext('2d'); let eqAnimationId;
+        function resizeEQCanvas() { eqCanvas.width = eqCanvas.offsetWidth * 2; eqCanvas.height = eqCanvas.offsetHeight * 2; }
+        function startEQAnimation() { cancelAnimationFrame(eqAnimationId); resizeEQCanvas(); animateEQ(); }
+        function animateEQ() {
+            eqAnimationId = requestAnimationFrame(animateEQ); 
+            if (!analyser || !audioCtx || (activeMediaEl && activeMediaEl.paused)) return;
+            const bufferLength = analyser.frequencyBinCount; 
+            const eqData = new Uint8Array(bufferLength); 
+            analyser.getByteFrequencyData(eqData); 
+            eqCtx.clearRect(0, 0, eqCanvas.width, eqCanvas.height);
+            const barCount = 32, barWidth = eqCanvas.width / barCount, step = Math.floor(bufferLength / barCount);
+            for (let i = 0; i < barCount; i++) {
+                let sum = 0; for (let j = 0; j < step; j++) sum += eqData[i * step + j];
+                const barHeight = (sum / step / 255) * eqCanvas.height * 0.9;
+                const gradient = eqCtx.createLinearGradient(0, eqCanvas.height, 0, eqCanvas.height - barHeight);
+                gradient.addColorStop(0, getComputedStyle(document.documentElement).getPropertyValue('--theme-color'));
+                gradient.addColorStop(1, hexToRgbaStr(getComputedStyle(document.documentElement).getPropertyValue('--theme-color').trim(), 0.3));
+                eqCtx.fillStyle = gradient; eqCtx.fillRect(i * barWidth + 2, eqCanvas.height - barHeight, barWidth - 4, barHeight);
+            }
+        }
+
+        // 20 大背景渲染引擎
+        const canvas = document.getElementById('bg-canvas'); const ctx = canvas.getContext('2d');
+        let engineData = [], animationId, time = 0, mousePhys = { action: 0 };
+        let currentPalette = ['#1e3a8a', '#06b6d4', '#fbbf24', '#9ca3af'], currentEngine = 0, currentDensity = 300;
+
+        window.addEventListener('mousedown', (e) => { if (e.button === 0) mousePhys.action = 1; else if (e.button === 2) mousePhys.action = -1; });
+        window.addEventListener('mouseup', () => { mousePhys.action = 0; });
+
+        function switchBackgroundEngine(customPalette = null, overrideEngine = null) {
+            cancelAnimationFrame(animationId); engineData = []; canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+            const engineType = overrideEngine !== null ? overrideEngine : currentEngine;
+            const palette = customPalette || currentPalette;
+            const numParticles = engineType === 0 ? currentDensity / 2 : currentDensity;
+            for(let i=0; i < numParticles; i++) {
+                engineData.push({ x: Math.random() * canvas.width, y: Math.random() * canvas.height, vx: (Math.random()-0.5)*2, vy: (Math.random()-0.5)*2, baseX: Math.random() * canvas.width, baseY: Math.random() * canvas.height, color: palette[Math.floor(Math.random() * palette.length)], size: Math.random() * 2 + 0.5, angle: Math.random() * Math.PI * 2, life: Math.random() * 100, phase: Math.random() * Math.PI * 2 });
+            }
+            animateBackground(engineType);
+        }
+
+        function animateBackground(engineType) {
+            animationId = requestAnimationFrame(() => animateBackground(engineType));
+            time += 0.01; analyzeAudio();
+            if ([1,2,3,5,6,11,14,18].includes(engineType)) {
+                ctx.globalCompositeOperation = 'destination-out'; ctx.fillStyle = 'rgba(0,0,0, 0.08)'; ctx.fillRect(0,0, canvas.width, canvas.height); ctx.globalCompositeOperation = 'source-over';
+            } else { ctx.clearRect(0,0, canvas.width, canvas.height); }
+
+            engineData.forEach(p => {
+                let dx = mouseX - p.x, dy = mouseY - p.y, dist = Math.hypot(dx, dy);
+                if (mousePhys.action !== 0 && dist < 600 && dist > 0) {
+                    let force = (600 - dist) / 600, moveAmt = force * force * 15 * mousePhys.action;
+                    p.x += (dx / dist) * moveAmt; p.y += (dy / dist) * moveAmt;
+                }
+                ctx.beginPath();
+                const speedBase = 1.5 + smoothedBass * 6 + kickPulse * 5;
+                const sizeBoost = smoothedTreble * 4 + kickPulse * 12;
+
+                switch(engineType) {
+                    case 0:
+                        p.x += Math.cos(p.angle) * (0.8 + smoothedBass * 3 + kickPulse * 3); p.y += Math.sin(p.angle) * (0.8 + smoothedBass * 3 + kickPulse * 3);
+                        p.angle += (Math.random() - 0.5) * 0.1;
+                        if (dist < 200 && mousePhys.action === 0) p.angle += Math.atan2(dy, dx) * 0.02;
+                        ctx.arc(p.x, p.y, p.size + smoothedBass*2 + kickPulse*3, 0, Math.PI*2); ctx.fillStyle = p.color; ctx.globalAlpha = 0.8; ctx.fill(); ctx.globalAlpha = 1;
+                        break;
+                    case 1:
+                        p.angle += (Math.sin(p.x * 0.002 + time) + Math.cos(p.y * 0.002 + time)) * 0.1;
+                        p.x += Math.cos(p.angle) * speedBase; p.y += Math.sin(p.angle) * speedBase;
+                        ctx.globalAlpha = 0.4 + smoothedMid * 0.6; ctx.arc(p.x, p.y, p.size + sizeBoost, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill(); ctx.globalAlpha = 1.0;
+                        break;
+                    case 2:
+                        p.vx += (Math.random()-0.5) * (1 + smoothedTreble*12); p.vy += (Math.random()-0.5) * (1 + smoothedTreble*12); p.vx *= 0.9; p.vy *= 0.9;
+                        ctx.moveTo(p.x, p.y); p.x += p.vx; p.y += p.vy; ctx.lineTo(p.x, p.y);
+                        ctx.lineWidth = p.size + smoothedBass*6 + kickPulse * 15; ctx.strokeStyle = p.color; ctx.stroke();
+                        break;
+                    case 3:
+                        p.x += Math.cos(p.angle) * (2 + smoothedTreble*6); p.y += Math.sin(p.angle) * (2 + smoothedTreble*6);
+                        ctx.arc(p.x, p.y, p.size + kickPulse * 8, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
+                        break;
+                    case 4:
+                        if (Math.random() < 0.05 + smoothedTreble + kickPulse) {
+                            if(Math.random()>0.5) p.vx = (Math.random()>0.5?1:-1) * (2+smoothedBass*15 + kickPulse*10); else p.vy = (Math.random()>0.5?1:-1) * (2+smoothedBass*15 + kickPulse*10);
+                        }
+                        ctx.moveTo(p.x, p.y); p.x += p.vx; p.y += p.vy; ctx.lineTo(p.x, p.y); ctx.lineWidth = p.size + kickPulse * 8; ctx.strokeStyle = p.color; ctx.stroke();
+                        break;
+                    case 5:
+                        p.life += 1 + smoothedTreble*5 + kickPulse*10;
+                        if(p.life > 100) { p.x = Math.random()*canvas.width; p.y = Math.random()*canvas.height; p.life = 0; }
+                        ctx.arc(p.x, p.y, p.life * (1 + smoothedBass*2 + kickPulse*0.5), 0, Math.PI * 2); ctx.strokeStyle = hexToRgbaStr(p.color, 1 - p.life/100); ctx.lineWidth = 1 + kickPulse*3; ctx.stroke();
+                        break;
+                    case 6:
+                        p.angle += 0.1 + smoothedBass; p.x += Math.cos(p.angle)*3; p.y += Math.sin(p.angle)*3;
+                        ctx.arc(p.x, p.y, p.size + kickPulse * 6, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
+                        break;
+                    case 7:
+                        p.angle += 0.05 + smoothedTreble; let r = p.size * (3 + smoothedBass*10 + kickPulse*15);
+                        ctx.moveTo(p.x + Math.cos(p.angle)*r, p.y + Math.sin(p.angle)*r); ctx.lineTo(p.x + Math.cos(p.angle+2.1)*r, p.y + Math.sin(p.angle+2.1)*r); ctx.lineTo(p.x + Math.cos(p.angle+4.2)*r, p.y + Math.sin(p.angle+4.2)*r);
+                        ctx.closePath(); ctx.strokeStyle = p.color; ctx.lineWidth = 1 + kickPulse*2; ctx.stroke();
+                        break;
+                    case 8:
+                        p.x = p.baseX + Math.sin(time + p.baseY)*50 * smoothedBass; p.y = p.baseY + Math.cos(time + p.baseX)*50 * smoothedBass;
+                        ctx.arc(p.x, p.y, p.size + kickPulse * 8, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
+                        break;
+                    case 9:
+                        let bloom = p.size * 10 * (1 + smoothedBass*2 + kickPulse*2);
+                        let grad = ctx.createRadialGradient(p.x, p.y, 0, p.x, p.y, bloom);
+                        grad.addColorStop(0, hexToRgbaStr(p.color, 0.5 + smoothedMid*0.5)); grad.addColorStop(1, 'rgba(0,0,0,0)');
+                        ctx.fillStyle = grad; ctx.arc(p.x, p.y, bloom, 0, Math.PI*2); ctx.fill();
+                        break;
+                    case 10:
+                        p.phase += 0.02 + smoothedBass * 0.1; let bRad = p.size * (2 + kickPulse * 20);
+                        for (let i = 0; i < 3; i++) { let a = p.phase + (i * Math.PI * 2 / 3); ctx.arc(p.x + Math.cos(a) * bRad, p.y + Math.sin(a) * bRad, p.size * 0.6 + smoothedTreble * 3, 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill(); }
+                        break;
+                    case 11:
+                        p.life += 0.5 + smoothedBass * 3; if (p.life > 80) { p.x = Math.random() * canvas.width; p.y = Math.random() * canvas.height; p.life = 0; }
+                        ctx.arc(p.x, p.y, p.life * (1 + smoothedBass * 2), 0, Math.PI * 2); ctx.strokeStyle = hexToRgbaStr(p.color, 1 - p.life / 80); ctx.lineWidth = 2 + kickPulse * 5; ctx.stroke();
+                        break;
+                    case 12:
+                        p.y += (3 + smoothedBass * 8 + kickPulse * 10); if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
+                        ctx.moveTo(p.x, p.y); ctx.lineTo(p.x, p.y + p.size * 8 + smoothedTreble * 15); ctx.lineWidth = p.size * 0.8; ctx.strokeStyle = p.color; ctx.stroke();
+                        break;
+                    case 13:
+                        let hexSize = 20 + smoothedBass * 15 + kickPulse * 10; p.angle += 0.01; ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle);
+                        for (let i = 0; i < 6; i++) ctx.lineTo(Math.cos(i * Math.PI / 3) * hexSize, Math.sin(i * Math.PI / 3) * hexSize);
+                        ctx.closePath(); ctx.strokeStyle = hexToRgbaStr(p.color, 0.3 + smoothedMid * 0.5); ctx.lineWidth = 1 + kickPulse * 2; ctx.stroke(); ctx.restore();
+                        break;
+                    case 14:
+                        p.y -= (2 + smoothedBass * 5 + kickPulse * 8); p.x += (Math.random() - 0.5) * 3; p.life += 0.8;
+                        if (p.life > 100 || p.y < 0) { p.x = canvas.width / 2 + (Math.random() - 0.5) * 200; p.y = canvas.height; p.life = 0; }
+                        ctx.arc(p.x, p.y, p.size * (3 + smoothedBass * 5) * (1 - p.life / 100), 0, Math.PI * 2); ctx.fillStyle = hexToRgbaStr(p.color, (1 - p.life / 100) * 0.8); ctx.fill();
+                        break;
+                    case 15:
+                        p.y += (4 + smoothedTreble * 6 + kickPulse * 5); if (p.y > canvas.height) { p.y = -10; p.x = Math.random() * canvas.width; }
+                        ctx.fillStyle = p.color; ctx.fillRect(p.x, p.y, p.size, p.size * 4 + smoothedBass * 10);
+                        break;
+                    case 16:
+                        p.angle += 0.03 + smoothedTreble * 0.05; p.y += 1 + smoothedBass * 2; if (p.y > canvas.height) { p.y = -20; p.x = Math.random() * canvas.width; }
+                        ctx.save(); ctx.translate(p.x, p.y); ctx.rotate(p.angle); ctx.ellipse(0, 0, p.size * 2, p.size * 4, 0, 0, Math.PI * 2); ctx.fillStyle = hexToRgbaStr(p.color, 0.7); ctx.fill(); ctx.restore();
+                        break;
+                    case 17:
+                        if (kickPulse > 0.3 && Math.random() < 0.3) {
+                            ctx.moveTo(p.x, 0); let lx = p.x; for (let ly = 0; ly < p.y; ly += 20) { lx += (Math.random() - 0.5) * 30; ctx.lineTo(lx, ly); }
+                            ctx.strokeStyle = p.color; ctx.lineWidth = 2 + kickPulse * 5; ctx.shadowColor = p.color; ctx.shadowBlur = 20; ctx.stroke(); ctx.shadowBlur = 0;
+                        }
+                        break;
+                    case 18:
+                        p.y -= (1 + smoothedBass * 3 + kickPulse * 2); if (p.y < -20) { p.y = canvas.height + 20; p.x = Math.random() * canvas.width; }
+                        ctx.arc(p.x, p.y, p.size * (2 + smoothedMid * 3), 0, Math.PI * 2); ctx.strokeStyle = hexToRgbaStr(p.color, 0.5 + smoothedTreble * 0.5); ctx.lineWidth = 1; ctx.stroke();
+                        break;
+                    case 19:
+                        p.angle += 0.005 + smoothedBass * 0.02; let spR = Math.hypot(p.x - canvas.width/2, p.y - canvas.height/2);
+                        let spA = Math.atan2(p.y - canvas.height/2, p.x - canvas.width/2) + 0.02;
+                        p.x = canvas.width/2 + Math.cos(spA) * spR; p.y = canvas.height/2 + Math.sin(spA) * spR;
+                        ctx.arc(p.x, p.y, p.size * (1 + smoothedTreble * 3 + kickPulse * 5), 0, Math.PI * 2); ctx.fillStyle = p.color; ctx.fill();
+                        break;
+                }
+
+                if(![0,1,5,8,11,14,16,18,19].includes(engineType)) {
+                    if(p.x < 0 || p.x > canvas.width || p.y < 0 || p.y > canvas.height) { p.x = Math.random()*canvas.width; p.y = Math.random()*canvas.height; }
+                }
+                if (engineType === 0) {
+                    if(p.x < -50) p.x = canvas.width + 50; if(p.x > canvas.width + 50) p.x = -50;
+                    if(p.y < -50) p.y = canvas.height + 50; if(p.y > canvas.height + 50) p.y = -50;
+                }
+            });
+
+            if (engineType === 0) {
+                const connectDist = 120 + smoothedBass * 60 + kickPulse * 40;
+                for(let i=0; i<engineData.length; i++) {
+                    for(let j=i+1; j<engineData.length; j++) {
+                        let d = Math.hypot(engineData[i].x - engineData[j].x, engineData[i].y - engineData[j].y);
+                        if(d < connectDist) { 
+                            ctx.beginPath(); ctx.strokeStyle = hexToRgbaStr(engineData[i].color, 0.8 - d/connectDist); 
+                            ctx.lineWidth = 0.8 + kickPulse * 2; ctx.moveTo(engineData[i].x, engineData[i].y); ctx.lineTo(engineData[j].x, engineData[j].y); ctx.stroke(); 
+                        }
+                    }
+                }
+            }
+        }
+
+        window.addEventListener('resize', () => { 
+            switchBackgroundEngine(); resizeEQCanvas(); 
+            mediaFiles.forEach(m => { if(m.type === 'audio') initCardWaveformInteraction(m); });
+        });
+
+        window.addEventListener('DOMContentLoaded', () => {
+            let initialConfig = null;
+            if (typeof HAKKI_CONFIG !== 'undefined') initialConfig = HAKKI_CONFIG;
+            else {
+                const localStr = localStorage.getItem('HAKKI_LOCAL_CACHE');
+                if (localStr) initialConfig = JSON.parse(localStr);
+            }
+            if (initialConfig) applyConfig(initialConfig);
+        });
+    </script>
+</body>
+</html>

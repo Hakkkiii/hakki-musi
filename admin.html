@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>控制台中心 | hakki Admin</title>
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;800&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --theme-color: #8b5cf6; --theme-rgb: 139, 92, 246;
+            --bg-color: #0d0f14; --text-main: #f3f4f6; --text-sub: #9ca3af;
+            --card-bg: rgba(26, 29, 38, 0.85); --card-border: rgba(255, 255, 255, 0.1);
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body { font-family: 'Outfit', sans-serif; background-color: var(--bg-color); color: var(--text-main); padding: 40px 20px; line-height: 1.5; }
+        .container { max-width: 1100px; margin: 0 auto; display: flex; flex-direction: column; gap: 25px; }
+
+        .header-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--card-border); padding-bottom: 20px; }
+        .header-bar h1 { font-size: 1.6rem; color: var(--theme-color); display: flex; align-items: center; gap: 10px; }
+        .live-status { font-size: 0.85rem; padding: 4px 12px; border-radius: 20px; background: rgba(16, 185, 129, 0.15); color: #10b981; border: 1px solid #10b981; }
+
+        .dash-section { background: var(--card-bg); border-radius: 16px; padding: 25px; border: 1px solid var(--card-border); box-shadow: 0 10px 30px rgba(0,0,0,0.4); }
+        .dash-section h3 { font-size: 1.15rem; margin-bottom: 15px; color: var(--text-main); border-bottom: 1px solid var(--card-border); padding-bottom: 8px; }
+
+        .dashboard-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 25px; }
+
+        .input-group { margin-bottom: 12px; }
+        .input-group label { display: block; font-size: 0.8rem; font-weight: 600; color: var(--text-sub); margin-bottom: 5px; }
+        .input-group input[type="text"], .input-group select, .input-group input[type="range"] { width: 100%; padding: 10px 14px; border-radius: 8px; border: 1px solid var(--card-border); background: rgba(0,0,0,0.3); color: var(--text-main); outline: none; font-family: inherit; }
+        .input-group input:focus, .input-group select:focus { border-color: var(--theme-color); }
+
+        .color-matrix { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 15px; }
+        .color-picker { display: flex; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 8px 12px; border-radius: 8px; border: 1px solid var(--card-border); }
+        .color-picker input[type="color"] { -webkit-appearance: none; border: none; width: 28px; height: 28px; border-radius: 50%; cursor: pointer; background: none; }
+        .palette-matrix { display: flex; gap: 8px; align-items: center; justify-content: space-between; background: rgba(0,0,0,0.2); padding: 10px; border-radius: 8px; border: 1px solid var(--card-border); margin-bottom: 12px; }
+        .palette-matrix input[type="color"] { -webkit-appearance: none; border: none; width: 35px; height: 35px; border-radius: 6px; cursor: pointer; background: none; }
+
+        /* 可拖拽项目样式 */
+        .dynamic-list-item { 
+            display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,0.25); 
+            padding: 10px 12px; border-radius: 8px; margin-bottom: 8px; border: 1px solid var(--card-border); 
+            transition: transform 0.2s, background 0.2s;
+        }
+        .dynamic-list-item.is-dragging { opacity: 0.4; background: rgba(var(--theme-rgb), 0.2); border-color: var(--theme-color); }
+        .drag-handle { cursor: grab; color: var(--text-sub); font-size: 1.2rem; user-select: none; }
+        .drag-handle:active { cursor: grabbing; }
+
+        .dynamic-list-item input { flex: 1; padding: 6px 10px; border-radius: 6px; border: 1px solid transparent; background: rgba(255,255,255,0.05); color: var(--text-main); }
+        .action-icon { cursor: pointer; color: var(--text-sub); font-weight: bold; width: 22px; text-align: center; }
+        .action-icon:hover { color: var(--theme-color); }
+        .action-icon.del:hover { color: #ef4444; }
+
+        .btn { background: rgba(255,255,255,0.08); border: 1px solid var(--card-border); padding: 10px 18px; border-radius: 8px; font-weight: 600; cursor: pointer; color: var(--text-main); display: inline-block; transition: 0.2s; }
+        .btn:hover { border-color: var(--theme-color); color: var(--theme-color); }
+        .btn.primary { background: var(--theme-color); color: white; border: none; }
+        .btn.primary:hover { filter: brightness(1.2); }
+
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.75); backdrop-filter: blur(5px); z-index: 1000; display: none; justify-content: center; align-items: center; }
+        .modal-content { background: #161821; border: 1px solid var(--theme-color); padding: 25px; border-radius: 12px; width: 480px; max-height: 90vh; overflow-y: auto; }
+        .note-item { display: flex; gap: 6px; align-items: center; background: rgba(255,255,255,0.05); padding: 6px 8px; border-radius: 6px; margin-bottom: 4px; }
+        .note-item input { flex: 1; background: transparent; border: none; color: var(--text-main); outline: none; }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <div class="header-bar">
+            <h1>⚙️ hakki 视觉与音频全局控制台</h1>
+            <div style="display: flex; gap: 15px; align-items: center;">
+                <span class="live-status">● 实时双端同步开启</span>
+                <a href="index.html" target="_blank" class="btn" style="text-decoration: none;">🔗 打开前台展示页</a>
+            </div>
+        </div>
+
+        <div class="dash-section" style="background: rgba(16, 185, 129, 0.08); border: 1px dashed #10b981;">
+            <h3>💾 本地极速部署 (实时缓存与静态打包)</h3>
+            <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 15px;">
+                管理端的所有调整会自动广播给前台展示端。调试完毕后点击导出，将生成的 <strong>config.js</strong> 与 <strong>index.html</strong> 放在同级目录即可免服务器上线！
+            </p>
+            <div style="display: flex; gap: 10px;">
+                <button class="btn primary" onclick="exportConfig()" style="background: #10b981; flex: 1;">📥 导出当前全部配置 (config.js)</button>
+                <input type="file" id="import-config" accept=".js" style="display:none" onchange="importConfig(event)">
+                <button class="btn" onclick="document.getElementById('import-config').click()" style="flex: 1;">📤 导入已有的 config.js</button>
+            </div>
+        </div>
+
+        <div class="dashboard-grid">
+            <div class="dash-section">
+                <h3>🎨 视觉与抽象艺术解耦</h3>
+                <div class="color-matrix">
+                    <div class="color-picker"><label>强调主题色</label><input type="color" id="color-theme" value="#8b5cf6" oninput="syncAll()"></div>
+                    <div class="color-picker"><label>网页背景色</label><input type="color" id="color-bg" value="#050505" oninput="syncAll()"></div>
+                    <div class="color-picker"><label>卡片底色</label><input type="color" id="color-card" value="#111318" oninput="syncAll()"></div>
+                    <div class="color-picker"><label>主文字颜色</label><input type="color" id="color-text" value="#f3f4f6" oninput="syncAll()"></div>
+                </div>
+
+                <div class="input-group">
+                    <div style="display:flex; justify-content:space-between;">
+                        <label>模块/卡片背景不透明度</label>
+                        <span id="card-opacity-val" style="font-size:0.8rem; color:var(--theme-color); font-weight:bold;">60%</span>
+                    </div>
+                    <input type="range" id="card-opacity" min="0" max="100" value="60" oninput="syncAll()">
+                </div>
+
+                <label style="font-size: 0.8rem; font-weight: 600; color: var(--text-sub); margin-bottom: 5px; display:block;">🎨 特效色盘（4色）</label>
+                <div class="palette-matrix">
+                    <input type="color" id="pal-1" value="#1e3a8a" onchange="syncAll()">
+                    <input type="color" id="pal-2" value="#06b6d4" onchange="syncAll()">
+                    <input type="color" id="pal-3" value="#fbbf24" onchange="syncAll()">
+                    <input type="color" id="pal-4" value="#9ca3af" onchange="syncAll()">
+                </div>
+
+                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px;">
+                    <div class="input-group">
+                        <label>悬浮辉光强度</label>
+                        <input type="range" id="module-glow" min="0" max="100" value="40" oninput="syncAll()">
+                    </div>
+                    <div class="input-group">
+                        <label>大框架排版</label>
+                        <select id="layout-style" onchange="syncAll()">
+                            <option value="top" selected>经典上下排版</option>
+                            <option value="sidebar">左侧导航排版</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="input-group" style="margin-top: 5px;">
+                    <label style="color: var(--theme-color);">全站模块与组件形状美学体系</label>
+                    <select id="card-shape-select" onchange="syncAll()">
+                        <option value="modern" selected>1. 经典现代圆角 (Default Modern)</option>
+                        <option value="cyber">2. 赛博斜切装甲 (Cyberpunk Chamfer)</option>
+                        <option value="sharp">3. 纯粹锐利直角 (Brutalist Sharp)</option>
+                        <option value="pill">4. 胶囊超椭圆 (Pill Smooth)</option>
+                        <option value="origami">5. 折纸立体多边形 (Folded Origami)</option>
+                        <option value="prism">6. 全息悬浮棱镜 (Prism Float)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="dash-section">
+                <h3>🌊 音频/物理响应特效引擎</h3>
+                <div class="input-group">
+                    <label>选择底层渲染算法</label>
+                    <select id="bg-engine-type" onchange="syncAll()">
+                        <option value="0" selected>01 经典引力连线</option>
+                        <option value="1">02 丝滑流体飞带</option>
+                        <option value="2">03 狂野书法律动</option>
+                        <option value="3">04 磁场极光漩涡</option>
+                        <option value="4">05 故障切割矩阵</option>
+                        <option value="5">06 水墨涟漪绽放</option>
+                        <option value="6">07 缠绕藤蔓生长</option>
+                        <option value="7">08 几何结晶风暴</option>
+                        <option value="8">09 量子弦抖动</option>
+                        <option value="9">10 呼吸光斑弥散</option>
+                        <option value="10">11 星尘爆裂</option>
+                        <option value="11">12 声波环扩散</option>
+                        <option value="12">13 霓虹雨幕</option>
+                        <option value="13">14 晶格蜂巢</option>
+                        <option value="14">15 火焰湍流</option>
+                        <option value="15">16 数据瀑布</option>
+                        <option value="16">17 花瓣飘落</option>
+                        <option value="17">18 闪电脉冲</option>
+                        <option value="18">19 气泡升腾</option>
+                        <option value="19">20 星系旋转</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>流体渲染密度 / 粒子数量</label>
+                    <input type="range" id="particle-density" min="50" max="800" value="300" step="10" oninput="syncAll()">
+                </div>
+                <div class="input-group" style="margin-top: 20px;">
+                    <label>卡片全局排版模式</label>
+                    <select id="media-layout-style" onchange="syncAll()">
+                        <option value="list" selected>紧凑列表模式 (波形通栏推荐)</option>
+                        <option value="grid">大图网格模式</option>
+                    </select>
+                </div>
+                <div class="input-group">
+                    <label>播放器UI主题</label>
+                    <select id="player-style-select" onchange="syncAll()">
+                        <option value="glass" selected>毛玻璃微透</option>
+                        <option value="cyber">赛博霓虹</option>
+                        <option value="minimal">极简流线</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+
+        <!-- 🔊 专属 UI 交互音效引擎（多音效随机触发） -->
+        <div class="dash-section">
+            <h3>🔊 专属 UI 交互音效引擎（支持多个音频随机播放）</h3>
+            <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 15px;">
+                为前台每个交互场景上传音频，触发时系统将自动随机抽取播放，避免单调重复。
+            </p>
+            
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+                <!-- 点击音效 -->
+                <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong style="font-size: 0.9rem;">🖱️ 点击音效 (Click SFX)</strong>
+                        <label for="sfx-upload-click" class="btn" style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;">+ 添加音频</label>
+                        <input type="file" id="sfx-upload-click" accept="audio/*" multiple style="display: none;" onchange="handleSFXUpload(event, 'click')">
+                    </div>
+                    <div id="sfx-list-click" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                </div>
+
+                <!-- 悬浮展示曲目音效 -->
+                <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong style="font-size: 0.9rem;">🎵 悬浮曲目音效 (Track Hover)</strong>
+                        <label for="sfx-upload-hover" class="btn" style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;">+ 添加音频</label>
+                        <input type="file" id="sfx-upload-hover" accept="audio/*" multiple style="display: none;" onchange="handleSFXUpload(event, 'hover')">
+                    </div>
+                    <div id="sfx-list-hover" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                </div>
+
+                <!-- 分类导览切换音效 -->
+                <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border);">
+                    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <strong style="font-size: 0.9rem;">🧭 分类导览切换 (Category Nav)</strong>
+                        <label for="sfx-upload-nav" class="btn" style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;">+ 添加音频</label>
+                        <input type="file" id="sfx-upload-nav" accept="audio/*" multiple style="display: none;" onchange="handleSFXUpload(event, 'nav')">
+                    </div>
+                    <div id="sfx-list-nav" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                </div>
+            </div>
+
+            <div class="input-group" style="margin-top: 15px; max-width: 320px;">
+                <label>UI 交互音效总音量</label>
+                <input type="range" id="sfx-volume" min="0" max="1" step="0.05" value="0.6" oninput="syncAll()">
+            </div>
+        </div>
+
+        <div class="dash-section">
+            <h3>🌄 全局背景设置</h3>
+            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                    <label>备用/静态上线相对路径</label>
+                    <input type="text" id="global-bg-url" placeholder="如 ./assets/bg.jpg" onchange="syncAll()">
+                </div>
+                <div class="input-group" style="width: 140px; margin-bottom: 0;">
+                    <label>媒体类型</label>
+                    <select id="global-bg-type" onchange="syncAll()">
+                        <option value="auto" selected>自动识别</option>
+                        <option value="image">静态图片</option>
+                        <option value="video">动态视频</option>
+                    </select>
+                </div>
+                <div class="input-group" style="width: 180px; margin-bottom: 0;">
+                    <label>底色遮罩不透明度</label>
+                    <input type="range" id="bg-overlay-opacity" min="0" max="100" value="100" oninput="syncAll()">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 10px; margin-top: 15px; align-items: center; flex-wrap: wrap;">
+                <label for="admin-bg-img" class="btn primary" style="cursor: pointer;">🖼️ 上传本地图片背景</label>
+                <input type="file" id="admin-bg-img" accept="image/*" style="display: none;" onchange="handleBgUploadDirect(event, 'image')">
+
+                <label for="admin-bg-vid" class="btn primary" style="background:#ec4899; cursor: pointer;">📽️ 上传本地视频背景</label>
+                <input type="file" id="admin-bg-vid" accept="video/*" style="display: none;" onchange="handleBgUploadDirect(event, 'video')">
+
+                <button class="btn" onclick="clearGlobalBgDirect()" style="color:#ef4444;">✕ 清除背景</button>
+                <span id="bg-upload-status" style="font-size: 0.8rem; color: #10b981; margin-left: 10px;"></span>
+            </div>
+        </div>
+
+        <div class="dash-section">
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 25px;">
+                <div>
+                    <h3>🧱 顶部嵌入文字组装</h3>
+                    <div id="dynamic-info-admin-list"></div>
+                    <button class="btn" onclick="addInfoBlock()" style="margin-top: 10px; border-style: dashed; width: 100%;">+ 新增文字块</button>
+                </div>
+                <div>
+                    <h3>📁 媒体分类管理</h3>
+                    <div id="dynamic-cat-admin-list"></div>
+                    <button class="btn" onclick="addCategoryBlock()" style="margin-top: 10px; border-style: dashed; width: 100%;">+ 新增分类</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 媒体发布区（包含鼠标拖拽排序系统） -->
+        <div class="dash-section">
+            <h3>🚀 媒体发布与作品排序管理（可直接按住 ☰ 拖拽上下排序）</h3>
+            <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px;">
+                <div class="input-group" style="flex: 1; margin-bottom: 0;">
+                    <label>选择发布至分类</label>
+                    <select id="upload-cat-select"></select>
+                </div>
+                <div style="display: flex; gap: 10px;">
+                    <label for="upload-audio" class="btn primary" style="cursor: pointer;">🎵 上传音频卡</label>
+                    <input type="file" id="upload-audio" accept="audio/*" style="display: none;" onchange="handleUpload(event)">
+                </div>
+            </div>
+            
+            <div id="media-items-manage-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
+        </div>
+    </div>
+
+    <!-- 元数据编辑模态框 -->
+    <div class="modal-overlay" id="edit-modal">
+        <div class="modal-content">
+            <h3 style="margin-bottom: 15px; color: var(--theme-color);">✏️ 编辑作品元数据</h3>
+            <input type="hidden" id="edit-id">
+            <div class="input-group"><label>作品标题</label><input type="text" id="edit-title"></div>
+            <div class="input-group"><label>艺术家/作者</label><input type="text" id="edit-author"></div>
+            <div class="input-group"><label>文件相对路径 (静态打包时使用)</label><input type="text" id="edit-url" placeholder="如 ./assets/track.mp3"></div>
+            <div class="input-group"><label>分类</label><select id="edit-category"></select></div>
+            <div class="input-group"><label>卡片强调色</label><input type="color" id="edit-card-color" value="#8b5cf6" style="height: 38px; width: 100%;"></div>
+            <div class="input-group">
+                <label>专属粒子引擎</label>
+                <select id="edit-particle-engine">
+                    <option value="-1">跟随全局</option>
+                    <option value="0">01 经典引力连线</option>
+                    <option value="1">02 丝滑流体飞带</option>
+                    <option value="2">03 狂野书法律动</option>
+                    <option value="3">04 磁场极光漩涡</option>
+                    <option value="4">05 故障切割矩阵</option>
+                    <option value="5">06 水墨涟漪绽放</option>
+                    <option value="6">07 缠绕藤蔓生长</option>
+                    <option value="7">08 几何结晶风暴</option>
+                    <option value="8">09 量子弦抖动</option>
+                    <option value="9">10 呼吸光斑弥散</option>
+                    <option value="10">11 星尘爆裂</option>
+                    <option value="11">12 声波环扩散</option>
+                    <option value="12">13 霓虹雨幕</option>
+                    <option value="13">14 晶格蜂巢</option>
+                    <option value="14">15 火焰湍流</option>
+                    <option value="15">16 数据瀑布</option>
+                    <option value="16">17 花瓣飘落</option>
+                    <option value="17">18 闪电脉冲</option>
+                    <option value="18">19 气泡升腾</option>
+                    <option value="19">20 星系旋转</option>
+                </select>
+            </div>
+            <div class="input-group">
+                <label>专属配色（2色）</label>
+                <div style="display: flex; gap: 10px;">
+                    <input type="color" id="edit-p-color1" value="#8b5cf6" style="flex:1; height: 32px;">
+                    <input type="color" id="edit-p-color2" value="#06b6d4" style="flex:1; height: 32px;">
+                </div>
+            </div>
+            <div class="input-group">
+                <label>曲目批注</label>
+                <div id="edit-notes-list"></div>
+                <button class="btn" style="width:100%; margin-top: 5px; border-style: dashed;" onclick="addEditNote()">+ 添加批注</button>
+            </div>
+            <div style="display: flex; gap: 10px; margin-top: 20px;">
+                <button class="btn" style="flex:1;" onclick="closeEditModal()">取消</button>
+                <button class="btn primary" style="flex:1;" onclick="saveMediaEdit()">保存并广播</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="config.js" onerror="console.log('未检测到 config.js')"></script>
+
+    <script>
+        const syncChannel = new BroadcastChannel('hakki_channel');
+
+        const dbPromise = new Promise((resolve, reject) => {
+            const request = indexedDB.open('HakkiLocalMediaDB', 1);
+            request.onupgradeneeded = e => {
+                const db = e.target.result;
+                if(!db.objectStoreNames.contains('files')) db.createObjectStore('files');
+            };
+            request.onsuccess = e => resolve(e.target.result);
+            request.onerror = e => reject(e);
+        });
+
+        async function saveFileToDB(id, file) {
+            const db = await dbPromise;
+            return new Promise((resolve, reject) => {
+                const tx = db.transaction('files', 'readwrite');
+                tx.objectStore('files').put(file, id);
+                tx.oncomplete = resolve; tx.onerror = reject;
+            });
+        }
+
+        let infoBlocks = [
+            { id: 1, label: "Creator", value: "hakki", isTitle: true, children: ["音乐制作人 / 视觉艺术家"] },
+            { id: 2, label: "Bio", value: "Kawaii Bass / 电子音乐", isTitle: false, children: ["专注低频美学", "赛博朋克叙事"] },
+            { id: 3, label: "Contact", value: "WeChat: hakki", isTitle: false, children: [] }
+        ];
+        let categoryBlocks = [{ id: 'c1', name: "Kawaii Bass" }, { id: 'c2', name: "商业视频配乐" }];
+        let mediaFiles = [];
+        let soundEffects = { click: [], hover: [], nav: [], volume: 0.6 };
+        let currentBgDbId = localStorage.getItem('hakki_bg_db_id') || null;
+
+        function getFullConfig() {
+            const safeMedia = mediaFiles.map(m => { const { tempUrl, waveformData, ...rest } = m; return rest; });
+            return {
+                visuals: {
+                    theme: document.getElementById('color-theme').value,
+                    bg: document.getElementById('color-bg').value,
+                    card: document.getElementById('color-card').value,
+                    cardOpacity: document.getElementById('card-opacity').value,
+                    text: document.getElementById('color-text').value,
+                    glow: document.getElementById('module-glow').value,
+                    layout: document.getElementById('layout-style').value,
+                    cardShape: document.getElementById('card-shape-select').value,
+                    mediaLayout: document.getElementById('media-layout-style').value,
+                    playerStyle: document.getElementById('player-style-select').value,
+                    bgEngine: document.getElementById('bg-engine-type').value,
+                    density: document.getElementById('particle-density').value,
+                    palette: [
+                        document.getElementById('pal-1').value,
+                        document.getElementById('pal-2').value,
+                        document.getElementById('pal-3').value,
+                        document.getElementById('pal-4').value
+                    ],
+                    globalBgUrl: document.getElementById('global-bg-url').value,
+                    globalBgType: document.getElementById('global-bg-type').value,
+                    bgDbId: currentBgDbId,
+                    bgOverlayOpacity: document.getElementById('bg-overlay-opacity').value
+                },
+                infoBlocks,
+                categoryBlocks,
+                mediaFiles: safeMedia,
+                soundEffects: {
+                    click: soundEffects.click || [],
+                    hover: soundEffects.hover || [],
+                    nav: soundEffects.nav || [],
+                    volume: document.getElementById('sfx-volume').value
+                }
+            };
+        }
+
+        function syncAll() {
+            document.getElementById('card-opacity-val').innerText = document.getElementById('card-opacity').value + '%';
+            const cfg = getFullConfig();
+            localStorage.setItem('HAKKI_LOCAL_CACHE', JSON.stringify(cfg));
+            syncChannel.postMessage({ type: 'SYNC_CONFIG', payload: cfg });
+        }
+
+        // ==========================================
+        // 🔊 音效管理与上传系统
+        // ==========================================
+        async function handleSFXUpload(event, type) {
+            const files = event.target.files;
+            if (!files || files.length === 0) return;
+            if (!soundEffects[type]) soundEffects[type] = [];
+
+            for (let file of files) {
+                const sfxId = 'sfx_' + type + '_' + Date.now() + '_' + Math.floor(Math.random()*1000);
+                await saveFileToDB(sfxId, file);
+                soundEffects[type].push({ id: sfxId, name: file.name });
+            }
+            renderSFXAdminList(type);
+            syncAll();
+            event.target.value = '';
+        }
+
+        function renderSFXAdminList(type) {
+            const box = document.getElementById(`sfx-list-${type}`);
+            if (!box) return;
+            box.innerHTML = '';
+            const list = soundEffects[type] || [];
+            list.forEach((item, idx) => {
+                const row = document.createElement('div');
+                row.style = "display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem;";
+                row.innerHTML = `
+                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">${item.name || item.id}</span>
+                    <span class="action-icon del" onclick="deleteSFX('${type}', ${idx})">✕</span>
+                `;
+                box.appendChild(row);
+            });
+        }
+
+        function deleteSFX(type, idx) {
+            if (soundEffects[type]) {
+                soundEffects[type].splice(idx, 1);
+                renderSFXAdminList(type);
+                syncAll();
+            }
+        }
+
+        async function handleBgUploadDirect(event, type) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const status = document.getElementById('bg-upload-status');
+            status.innerText = '正在存入本地浏览器数据库...';
+
+            const dbId = 'global_bg_' + Date.now();
+            await saveFileToDB(dbId, file);
+            currentBgDbId = dbId;
+            localStorage.setItem('hakki_bg_db_id', dbId);
+
+            document.getElementById('global-bg-type').value = type;
+            status.innerText = `✅ 背景已缓存至本地！`;
+            syncAll();
+            event.target.value = '';
+        }
+
+        function clearGlobalBgDirect() {
+            currentBgDbId = null;
+            localStorage.removeItem('hakki_bg_db_id');
+            document.getElementById('global-bg-url').value = '';
+            document.getElementById('bg-upload-status').innerText = '背景已清除';
+            syncAll();
+        }
+
+        function exportConfig() {
+            const configObj = getFullConfig();
+            const jsString = `const HAKKI_CONFIG = ${JSON.stringify(configObj, null, 4)};`;
+            const blob = new Blob([jsString], { type: 'text/javascript' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a'); a.href = url; a.download = 'config.js';
+            document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+            alert('导出成功！请将下载的 config.js 放进项目同级目录。');
+        }
+
+        function importConfig(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const match = e.target.result.match(/const\s+HAKKI_CONFIG\s*=\s*(\{[\s\S]*\});/);
+                    if (match && match[1]) {
+                        localStorage.setItem('HAKKI_LOCAL_CACHE', match[1]);
+                        alert('读取成功！页面将重载应用...'); setTimeout(() => location.reload(), 800);
+                    } else alert('文件格式解析失败');
+                } catch(err) { alert('导入出错: ' + err); }
+            };
+            reader.readAsText(file); event.target.value = '';
+        }
+
+        function renderInfoAdmin() {
+            const list = document.getElementById('dynamic-info-admin-list'); list.innerHTML = '';
+            infoBlocks.forEach((block, index) => {
+                const item = document.createElement('div'); item.className = 'dynamic-list-item';
+                item.innerHTML = `<input type="text" value="${block.label}" onchange="updateInfo(${block.id}, 'label', this.value)" style="width: 80px; font-weight:bold;"><input type="text" value="${block.value}" onchange="updateInfo(${block.id}, 'value', this.value)"><span class="action-icon" onclick="toggleTitle(${block.id})">${block.isTitle ? '⭐' : '☆'}</span><span class="action-icon" onclick="addSubInfo(${block.id})">+</span><span class="action-icon" onclick="moveInfo(${index}, -1)">↑</span><span class="action-icon" onclick="moveInfo(${index}, 1)">↓</span><span class="action-icon del" onclick="deleteInfo(${block.id})">✕</span>`;
+                list.appendChild(item);
+                if (block.children && block.children.length > 0) {
+                    const subList = document.createElement('div'); subList.style = "margin-left: 25px; margin-bottom: 6px;";
+                    block.children.forEach((sub, subIdx) => {
+                        const subItem = document.createElement('div'); subItem.className = 'dynamic-list-item'; subItem.style = "padding: 4px 8px;";
+                        subItem.innerHTML = `<input type="text" value="${sub}" onchange="updateSubInfo(${block.id}, ${subIdx}, this.value)"><span class="action-icon del" onclick="deleteSubInfo(${block.id}, ${subIdx})">✕</span>`;
+                        subList.appendChild(subItem);
+                    });
+                    list.appendChild(subList);
+                }
+            });
+        }
+        function addInfoBlock() { infoBlocks.push({ id: Date.now(), label: "新标签", value: "内容", isTitle: false, children: [] }); renderInfoAdmin(); syncAll(); }
+        function updateInfo(id, key, val) { const b = infoBlocks.find(x => x.id === id); if(b) b[key] = val; syncAll(); }
+        function toggleTitle(id) { infoBlocks.forEach(b => b.isTitle = false); const b = infoBlocks.find(x => x.id === id); if(b) b.isTitle = true; renderInfoAdmin(); syncAll(); }
+        function deleteInfo(id) { infoBlocks = infoBlocks.filter(x => x.id !== id); renderInfoAdmin(); syncAll(); }
+        function moveInfo(index, dir) { if(index+dir<0 || index+dir>=infoBlocks.length) return; const t = infoBlocks[index]; infoBlocks[index] = infoBlocks[index+dir]; infoBlocks[index+dir] = t; renderInfoAdmin(); syncAll(); }
+        function addSubInfo(id) { const b = infoBlocks.find(x => x.id === id); if (b) { if(!b.children) b.children=[]; b.children.push("次级批注"); renderInfoAdmin(); syncAll(); } }
+        function updateSubInfo(id, idx, val) { const b = infoBlocks.find(x => x.id === id); if (b && b.children[idx] !== undefined) { b.children[idx] = val; syncAll(); } }
+        function deleteSubInfo(id, idx) { const b = infoBlocks.find(x => x.id === id); if (b && b.children) { b.children.splice(idx, 1); renderInfoAdmin(); syncAll(); } }
+
+        function renderCatAdmin() {
+            const list = document.getElementById('dynamic-cat-admin-list'); list.innerHTML = '';
+            categoryBlocks.forEach((cat, index) => {
+                const item = document.createElement('div'); item.className = 'dynamic-list-item';
+                item.innerHTML = `<input type="text" value="${cat.name}" onchange="updateCat('${cat.id}', this.value)"><span class="action-icon" onclick="moveCat(${index}, -1)">↑</span><span class="action-icon" onclick="moveCat(${index}, 1)">↓</span><span class="action-icon del" onclick="deleteCat('${cat.id}')">✕</span>`;
+                list.appendChild(item);
+            });
+            const sel = document.getElementById('upload-cat-select'); sel.innerHTML = '';
+            categoryBlocks.forEach(c => { sel.innerHTML += `<option value="${c.name}">${c.name}</option>`; });
+        }
+        function addCategoryBlock() { categoryBlocks.push({ id: 'c'+Date.now(), name: "新建分类" }); renderCatAdmin(); syncAll(); }
+        function updateCat(id, newName) { const cat = categoryBlocks.find(c => c.id === id); if(!cat) return; const old = cat.name; cat.name = newName; mediaFiles.forEach(m => { if(m.category === old) m.category = newName; }); renderCatAdmin(); renderMediaAdminList(); syncAll(); }
+        function deleteCat(id) { const cat = categoryBlocks.find(c => c.id === id); if(!cat) return; categoryBlocks = categoryBlocks.filter(c => c.id !== id); mediaFiles.forEach(m => { if(m.category === cat.name) m.category = '未分类'; }); renderCatAdmin(); renderMediaAdminList(); syncAll(); }
+        function moveCat(index, dir) { if(index+dir<0 || index+dir>=categoryBlocks.length) return; const t = categoryBlocks[index]; categoryBlocks[index] = categoryBlocks[index+dir]; categoryBlocks[index+dir] = t; renderCatAdmin(); syncAll(); }
+
+        async function handleUpload(event) {
+            const file = event.target.files[0]; if (!file) return;
+            const dbId = 'media_' + Date.now();
+            await saveFileToDB(dbId, file);
+            mediaFiles.push({
+                id: Date.now(), type: 'audio', title: file.name.replace(/\.[^/.]+$/, ""), author: "hakki",
+                url: '', dbId: dbId, category: document.getElementById('upload-cat-select').value || (categoryBlocks.length>0?categoryBlocks[0].name:'未分类'),
+                notes: [], cardColor: null, particleEngine: -1, particleColors: []
+            });
+            event.target.value = '';
+            renderMediaAdminList();
+            syncAll();
+            alert('曲目已入库并广播至展示端！');
+        }
+
+        // ==========================================
+        // ☰ 核心：拖拽排序渲染系统
+        // ==========================================
+        let draggedItemIndex = null;
+
+        function renderMediaAdminList() {
+            const list = document.getElementById('media-items-manage-list'); list.innerHTML = '';
+            mediaFiles.forEach((media, idx) => {
+                const item = document.createElement('div');
+                item.className = 'dynamic-list-item';
+                item.draggable = true;
+                item.dataset.index = idx;
+                item.style = "padding: 12px; justify-content: space-between;";
+
+                item.innerHTML = `
+                    <div style="display: flex; gap: 12px; align-items: center;">
+                        <span class="drag-handle" title="按住直接拖动调序">☰</span>
+                        <span style="font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background: rgba(var(--theme-rgb), 0.2); color: var(--theme-color); font-weight: bold;">AUDIO</span>
+                        <strong>${media.title}</strong>
+                        <span style="font-size: 0.8rem; color: var(--text-sub);">[${media.category}]</span>
+                    </div>
+                    <div style="display: flex; gap: 10px;">
+                        <button class="btn" style="padding: 4px 10px; font-size: 0.8rem;" onclick="openEditModal(${media.id})">✏️ 编辑</button>
+                        <button class="btn" style="padding: 4px 10px; font-size: 0.8rem; color:#ef4444;" onclick="deleteMedia(${media.id})">✕ 删除</button>
+                    </div>`;
+
+                // 拖动排序事件
+                item.addEventListener('dragstart', (e) => {
+                    draggedItemIndex = idx;
+                    item.classList.add('is-dragging');
+                    e.dataTransfer.effectAllowed = 'move';
+                });
+
+                item.addEventListener('dragend', () => {
+                    item.classList.remove('is-dragging');
+                });
+
+                item.addEventListener('dragover', (e) => {
+                    e.preventDefault();
+                    e.dataTransfer.dropEffect = 'move';
+                });
+
+                item.addEventListener('drop', (e) => {
+                    e.preventDefault();
+                    const targetIndex = parseInt(item.dataset.index);
+                    if (draggedItemIndex === null || draggedItemIndex === targetIndex) return;
+
+                    // 移动数组元素
+                    const movedItem = mediaFiles.splice(draggedItemIndex, 1)[0];
+                    mediaFiles.splice(targetIndex, 0, movedItem);
+
+                    renderMediaAdminList();
+                    syncAll(); // 广播全新排序给前台页面
+                });
+
+                list.appendChild(item);
+            });
+        }
+
+        let tempEditNotes = [];
+        function openEditModal(id) {
+            const media = mediaFiles.find(m => m.id === id); if(!media) return;
+            document.getElementById('edit-id').value = id;
+            document.getElementById('edit-title').value = media.title;
+            document.getElementById('edit-author').value = media.author;
+            document.getElementById('edit-url').value = media.url || '';
+            const sel = document.getElementById('edit-category'); sel.innerHTML = '';
+            categoryBlocks.forEach(c => { sel.innerHTML += `<option value="${c.name}" ${c.name === media.category ? 'selected' : ''}>${c.name}</option>`; });
+            document.getElementById('edit-card-color').value = media.cardColor || '#8b5cf6';
+            document.getElementById('edit-particle-engine').value = media.particleEngine ?? -1;
+            document.getElementById('edit-p-color1').value = media.particleColors?.[0] || '#8b5cf6';
+            document.getElementById('edit-p-color2').value = media.particleColors?.[1] || '#06b6d4';
+            tempEditNotes = [...(media.notes || [])];
+            renderEditNotes();
+            document.getElementById('edit-modal').style.display = 'flex';
+        }
+        function renderEditNotes() {
+            const list = document.getElementById('edit-notes-list'); list.innerHTML = '';
+            tempEditNotes.forEach((n, i) => {
+                const item = document.createElement('div'); item.className = 'note-item';
+                item.innerHTML = `<input type="text" value="${n}" onchange="tempEditNotes[${i}] = this.value"><span class="action-icon del" onclick="tempEditNotes.splice(${i}, 1); renderEditNotes();">✕</span>`;
+                list.appendChild(item);
+            });
+        }
+        function addEditNote() { tempEditNotes.push('新批注'); renderEditNotes(); }
+        function closeEditModal() { document.getElementById('edit-modal').style.display = 'none'; }
+        function saveMediaEdit() {
+            const id = parseInt(document.getElementById('edit-id').value);
+            const media = mediaFiles.find(m => m.id === id);
+            if(media) {
+                media.title = document.getElementById('edit-title').value;
+                media.author = document.getElementById('edit-author').value;
+                media.url = document.getElementById('edit-url').value;
+                media.category = document.getElementById('edit-category').value;
+                media.cardColor = document.getElementById('edit-card-color').value;
+                media.particleEngine = parseInt(document.getElementById('edit-particle-engine').value);
+                media.particleColors = [document.getElementById('edit-p-color1').value, document.getElementById('edit-p-color2').value];
+                media.notes = [...tempEditNotes];
+            }
+            closeEditModal();
+            renderMediaAdminList();
+            syncAll();
+        }
+        function deleteMedia(id) {
+            if(confirm('确认删除此作品？')) {
+                mediaFiles = mediaFiles.filter(m => m.id !== id);
+                renderMediaAdminList();
+                syncAll();
+            }
+        }
+
+        window.addEventListener('DOMContentLoaded', () => {
+            let loaded = null;
+            if (typeof HAKKI_CONFIG !== 'undefined') loaded = HAKKI_CONFIG;
+            else {
+                const s = localStorage.getItem('HAKKI_LOCAL_CACHE');
+                if (s) loaded = JSON.parse(s);
+            }
+            if (loaded) {
+                infoBlocks = loaded.infoBlocks || infoBlocks;
+                categoryBlocks = loaded.categoryBlocks || categoryBlocks;
+                mediaFiles = loaded.mediaFiles || [];
+                soundEffects = loaded.soundEffects || { click: [], hover: [], nav: [], volume: 0.6 };
+
+                if (loaded.visuals) {
+                    const v = loaded.visuals;
+                    document.getElementById('color-theme').value = v.theme || '#8b5cf6';
+                    document.getElementById('color-bg').value = v.bg || '#050505';
+                    document.getElementById('color-card').value = v.card || '#111318';
+                    if (v.cardOpacity !== undefined) document.getElementById('card-opacity').value = v.cardOpacity;
+                    document.getElementById('color-text').value = v.text || '#f3f4f6';
+                    document.getElementById('module-glow').value = v.glow || 40;
+                    document.getElementById('layout-style').value = v.layout || 'top';
+                    document.getElementById('card-shape-select').value = v.cardShape || 'modern';
+                    document.getElementById('media-layout-style').value = v.mediaLayout || 'list';
+                    document.getElementById('player-style-select').value = v.playerStyle || 'glass';
+                    document.getElementById('bg-engine-type').value = v.bgEngine || 0;
+                    document.getElementById('particle-density').value = v.density || 300;
+                    if(v.palette) {
+                        for(let i=0; i<4; i++) if(document.getElementById(`pal-${i+1}`)) document.getElementById(`pal-${i+1}`).value = v.palette[i];
+                    }
+                    if(v.globalBgUrl) document.getElementById('global-bg-url').value = v.globalBgUrl;
+                    if(v.globalBgType) document.getElementById('global-bg-type').value = v.globalBgType;
+                    if(v.bgDbId) currentBgDbId = v.bgDbId;
+                    if(v.bgOverlayOpacity !== undefined) document.getElementById('bg-overlay-opacity').value = v.bgOverlayOpacity;
+                }
+            }
+            document.getElementById('card-opacity-val').innerText = document.getElementById('card-opacity').value + '%';
+            if (soundEffects.volume !== undefined) document.getElementById('sfx-volume').value = soundEffects.volume;
+            if(currentBgDbId) document.getElementById('bg-upload-status').innerText = '✅ 本地数据库中已存有背景';
+
+            renderInfoAdmin();
+            renderCatAdmin();
+            renderMediaAdminList();
+            renderSFXAdminList('click');
+            renderSFXAdminList('hover');
+            renderSFXAdminList('nav');
+        });
+    </script>
+</body>
+</html>
