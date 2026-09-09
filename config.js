@@ -18,9 +18,9 @@ const HAKKI_CONFIG = {
             "#828282",
             "#9ca3af"
         ],
-        "globalBgUrl": "blob:file:///39dd28ff-5004-43fe-a6fc-9048e02a9546",
+        "globalBgUrl": ".\\assets\\hakki white.png",
         "globalBgType": "image",
-        "bgDbId": "global_bg_1788965998179",
+        "bgDbId": "global_bg_1788970044917",
         "bgOverlayOpacity": "4"
     },
     "infoBlocks": [
@@ -60,7 +60,7 @@ const HAKKI_CONFIG = {
             "type": "audio",
             "title": "Teto Garage",
             "author": "Hakki",
-            "url": "C:\\Hakki-extension\\hakki-web\\assets\\Teto Garage Clip.mp3",
+            "url": ".\\assets\\Teto Garage Clip.mp3",
             "dbId": "media_1788959605811",
             "category": "电子音乐",
             "notes": [
@@ -78,7 +78,7 @@ const HAKKI_CONFIG = {
             "type": "audio",
             "title": "Crystal Spiral",
             "author": "Hakki",
-            "url": "C:\\Hakki-extension\\hakki-web\\assets\\Astral Bass & complextro.mp3",
+            "url": ".\\assets\\Astral Bass & complextro.mp3",
             "dbId": "media_1788941930022",
             "category": "电子音乐",
             "notes": [
@@ -96,7 +96,7 @@ const HAKKI_CONFIG = {
             "type": "audio",
             "title": "灰烬之声",
             "author": "Hakki/Ember",
-            "url": "C:\\Hakki-extension\\hakki-web\\assets\\20260602 95BPM Emin 2.mp3",
+            "url": ".\\assets\\20260602 95BPM Emin 2.mp3",
             "dbId": "media_1788941688815",
             "category": "电子音乐",
             "notes": [
@@ -114,7 +114,7 @@ const HAKKI_CONFIG = {
             "type": "audio",
             "title": "Midnight Kissa",
             "author": "Hakki",
-            "url": "C:\\Hakki-extension\\hakki-web\\assets\\20260520 变拍子.mp3",
+            "url": ".\\assets\\20260520 变拍子.mp3",
             "dbId": "media_1788942621883",
             "category": "电子音乐",
             "notes": [
@@ -132,7 +132,7 @@ const HAKKI_CONFIG = {
             "type": "audio",
             "title": "Neon Synapse",
             "author": "Hakki",
-            "url": "C:\\Hakki-extension\\hakki-web\\assets\\20260518 jazz fusion.mp3",
+            "url": ".\\assets\\20260518 jazz fusion.mp3",
             "dbId": "media_1788942746136",
             "category": "电子音乐",
             "notes": [
@@ -150,7 +150,7 @@ const HAKKI_CONFIG = {
             "type": "audio",
             "title": "Complextro Remix",
             "author": "Hakki",
-            "url": "C:\\Hakki-extension\\hakki-web\\assets\\Complextro Remix.mp3",
+            "url": ".\\assets\\Complextro Remix.mp3",
             "dbId": "media_1788942911325",
             "category": "电子音乐",
             "notes": [
@@ -168,7 +168,7 @@ const HAKKI_CONFIG = {
             "type": "audio",
             "title": "Magical Ribbon, Midnight Orbit",
             "author": "Hakki",
-            "url": "C:\\Hakki-extension\\hakki-web\\assets\\kawaii bass.mp3",
+            "url": ".\\assets\\kawaii bass.mp3",
             "dbId": "media_1788942995989",
             "category": "电子音乐",
             "notes": [
@@ -186,7 +186,7 @@ const HAKKI_CONFIG = {
             "type": "audio",
             "title": "鸣潮 - Boss 战 - 燃梦的黑炎-SS激斗等级",
             "author": "hakki",
-            "url": "C:\\Hakki-extension\\hakki-web\\assets\\Drums&bass（鸣潮战斗）.wav",
+            "url": ".\\assets\\Drums&bass（鸣潮战斗）.wav",
             "dbId": "media_1788943076412",
             "category": "电子音乐",
             "notes": [
@@ -204,7 +204,7 @@ const HAKKI_CONFIG = {
             "type": "audio",
             "title": "听雪",
             "author": "Hakki",
-            "url": "C:\\Hakki-extension\\hakki-web\\assets\\china 听雪.mp3",
+            "url": ".\\assets\\china 听雪.mp3",
             "dbId": "media_1788945998459",
             "category": "管弦乐",
             "notes": [
