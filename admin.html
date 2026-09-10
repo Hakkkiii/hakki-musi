@@ -85,7 +85,7 @@
 
         <div class="dashboard-grid">
             <div class="dash-section">
-                <h3>🎨 视觉与抽象艺术解耦</h3>
+                <h3>🎨 视觉与色彩规范</h3>
                 <div class="color-matrix">
                     <div class="color-picker"><label>强调主题色</label><input type="color" id="color-theme" value="#8b5cf6" oninput="syncAll()"></div>
                     <div class="color-picker"><label>网页背景色</label><input type="color" id="color-bg" value="#050505" oninput="syncAll()"></div>
@@ -185,11 +185,11 @@
             </div>
         </div>
 
-        <!-- 🔊 专属 UI 交互音效引擎（支持直接编辑与路径设置） -->
+        <!-- 🔊 专属 UI 交互音效引擎 -->
         <div class="dash-section">
-            <h3>🔊 专属 UI 交互音效引擎（支持填写/编辑相对路径）</h3>
+            <h3>🔊 专属 UI 交互音效引擎（支持填写相对路径）</h3>
             <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 15px;">
-                每个音效既可以直接编辑相对路径（如 <code>./assets/click.wav</code>），也可以通过按钮上传。分类导览已调整为<strong>鼠标悬浮即可触发</strong>。
+                每个音效均可直接在右侧修改相对路径（如 <code>./assets/click.wav</code>），也可以通过按钮上传进库。
             </p>
             
             <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
@@ -236,15 +236,26 @@
             </div>
         </div>
 
+        <!-- 🌄 全局背景/壁纸设置（支持 PC 视频与手机图片双端独立配置） -->
         <div class="dash-section">
-            <h3>🌄 全局背景/壁纸设置（支持直接编辑静态相对路径）</h3>
-            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
-                <div class="input-group" style="flex: 1; margin-bottom: 0;">
-                    <label>壁纸/背景文件相对路径地址 (例如 ./assets/hakki-white.png)</label>
-                    <input type="text" id="global-bg-url" placeholder="如 ./assets/bg.jpg" oninput="syncAll()">
+            <h3>🌄 全局背景与壁纸设置（PC 视频 + 手机图片双轨配置）</h3>
+            <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 15px;">
+                当电脑端采用 MP4 动态视频时，可在下方填写一张适合手机端显示的静态图片路径（避免手机端黑屏与省电拦截）。
+            </p>
+            <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                <div class="input-group">
+                    <label>💻 PC 电脑端背景路径 (支持 MP4 或图片，如 ./assets/bg.mp4)</label>
+                    <input type="text" id="global-bg-url" placeholder="如 ./assets/bg.mp4" oninput="syncAll()">
                 </div>
-                <div class="input-group" style="width: 140px; margin-bottom: 0;">
-                    <label>媒体类型</label>
+                <div class="input-group">
+                    <label>📱 手机端专属图片壁纸 (如 ./assets/hakki-white.png)</label>
+                    <input type="text" id="mobile-bg-url" placeholder="如 ./assets/hakki-white.png" oninput="syncAll()">
+                </div>
+            </div>
+
+            <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
+                <div class="input-group" style="width: 160px; margin-bottom: 0;">
+                    <label>PC 媒体类型</label>
                     <select id="global-bg-type" onchange="syncAll()">
                         <option value="auto" selected>自动识别</option>
                         <option value="image">静态图片</option>
@@ -258,13 +269,13 @@
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px; align-items: center; flex-wrap: wrap;">
-                <label for="admin-bg-img" class="btn primary" style="cursor: pointer;">🖼️ 上传本地图片壁纸</label>
+                <label for="admin-bg-img" class="btn primary" style="cursor: pointer;">🖼️ 上传本地背景图</label>
                 <input type="file" id="admin-bg-img" accept="image/*" style="display: none;" onchange="handleBgUploadDirect(event, 'image')">
 
-                <label for="admin-bg-vid" class="btn primary" style="background:#ec4899; cursor: pointer;">📽️ 上传本地视频壁纸</label>
+                <label for="admin-bg-vid" class="btn primary" style="background:#ec4899; cursor: pointer;">📽️ 上传本地背景视频</label>
                 <input type="file" id="admin-bg-vid" accept="video/*" style="display: none;" onchange="handleBgUploadDirect(event, 'video')">
 
-                <button class="btn" onclick="clearGlobalBgDirect()" style="color:#ef4444;">✕ 清除壁纸</button>
+                <button class="btn" onclick="clearGlobalBgDirect()" style="color:#ef4444;">✕ 清除所有壁纸</button>
                 <span id="bg-upload-status" style="font-size: 0.8rem; color: #10b981; margin-left: 10px;"></span>
             </div>
         </div>
@@ -285,7 +296,7 @@
         </div>
 
         <div class="dash-section">
-            <h3>🚀 媒体发布与作品排序管理（可直接按住 ☰ 拖拽上下排序）</h3>
+            <h3>🚀 媒体发布与作品排序管理（按住 ☰ 拖拽调序）</h3>
             <div style="display: flex; gap: 15px; align-items: flex-end; margin-bottom: 20px;">
                 <div class="input-group" style="flex: 1; margin-bottom: 0;">
                     <label>选择发布至分类</label>
@@ -431,6 +442,7 @@
                         document.getElementById('pal-4').value
                     ],
                     globalBgUrl: document.getElementById('global-bg-url').value,
+                    mobileBgUrl: document.getElementById('mobile-bg-url').value, // 写入手机壁纸路径
                     globalBgType: document.getElementById('global-bg-type').value,
                     bgDbId: currentBgDbId,
                     bgOverlayOpacity: document.getElementById('bg-overlay-opacity').value
@@ -458,9 +470,6 @@
             }
         }
 
-        // ==========================================
-        // 🔊 音效管理（支持上传与路径编辑）
-        // ==========================================
         async function handleSFXUpload(event, type) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
@@ -469,7 +478,6 @@
             for (let file of files) {
                 const sfxId = 'sfx_' + type + '_' + Date.now() + '_' + Math.floor(Math.random()*1000);
                 await saveFileToDB(sfxId, file);
-                // 默认生成相对路径推荐
                 soundEffects[type].push({ 
                     id: sfxId, 
                     name: file.name, 
@@ -498,10 +506,8 @@
             box.innerHTML = '';
             const list = soundEffects[type] || [];
             list.forEach((item, idx) => {
-                // 兼容老数据结构
                 const currentName = typeof item === 'object' ? (item.name || '音效文件') : '采样音频';
                 const currentUrl = typeof item === 'object' ? (item.url || '') : '';
-                const itemId = typeof item === 'object' ? item.id : item;
 
                 const row = document.createElement('div');
                 row.className = 'dynamic-list-item';
@@ -552,13 +558,12 @@
             } catch(e) {}
 
             document.getElementById('global-bg-type').value = type;
-            // 自动填充相对路径推荐，方便打包
             const bgInput = document.getElementById('global-bg-url');
             if (!bgInput.value || bgInput.value.trim() === '') {
                 bgInput.value = `./assets/${file.name}`;
             }
 
-            status.innerText = `✅ 壁纸已缓存 (可直接编辑上方路径)`;
+            status.innerText = `✅ 背景文件已缓存 (可直接在上方调整路径)`;
             syncAll();
             event.target.value = '';
         }
@@ -569,6 +574,7 @@
                 localStorage.removeItem('hakki_bg_db_id');
             } catch(e) {}
             document.getElementById('global-bg-url').value = '';
+            document.getElementById('mobile-bg-url').value = '';
             document.getElementById('bg-upload-status').innerText = '壁纸已清除';
             syncAll();
         }
@@ -585,7 +591,7 @@
             a.click(); 
             document.body.removeChild(a); 
             URL.revokeObjectURL(url);
-            alert('导出成功！请将下载的 config.js 放进项目同级目录。');
+            alert('导出成功！请将下载的 config.js 放到项目同级目录下覆盖。');
         }
 
         function importConfig(event) {
@@ -824,6 +830,7 @@
                         for(let i=0; i<4; i++) if(document.getElementById(`pal-${i+1}`)) document.getElementById(`pal-${i+1}`).value = v.palette[i];
                     }
                     if(v.globalBgUrl) document.getElementById('global-bg-url').value = v.globalBgUrl;
+                    if(v.mobileBgUrl) document.getElementById('mobile-bg-url').value = v.mobileBgUrl; // 加载手机专属壁纸路径
                     if(v.globalBgType) document.getElementById('global-bg-type').value = v.globalBgType;
                     if(v.bgDbId) currentBgDbId = v.bgDbId;
                     if(v.bgOverlayOpacity !== undefined) document.getElementById('bg-overlay-opacity').value = v.bgOverlayOpacity;
