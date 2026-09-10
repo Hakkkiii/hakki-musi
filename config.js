@@ -22,7 +22,7 @@ const HAKKI_CONFIG = {
         "mobileBgUrl": ".\\assets\\hakki withe.png",
         "globalBgType": "video",
         "bgDbId": "global_bg_1789025302837",
-        "bgOverlayOpacity": "67"
+        "bgOverlayOpacity": "0"
     },
     "infoBlocks": [
         {
@@ -262,6 +262,6 @@ const HAKKI_CONFIG = {
                 "url": ".\\assets\\Hakki Percussion 9.wav"
             }
         ],
-        "volume": "0.25"
+        "volume": "0.05"
     }
 };
