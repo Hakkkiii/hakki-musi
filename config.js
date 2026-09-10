@@ -222,35 +222,42 @@ const HAKKI_CONFIG = {
         "click": [
             {
                 "id": "sfx_click_1788965170937_515",
-                "name": "Hakki Percussion 1.wav"
+                "name": "Hakki Percussion 1.wav",
+                "url": ".\\assets\\Hakki Percussion 1.wav"
             },
             {
                 "id": "sfx_click_1788965170942_436",
-                "name": "Hakki Percussion 4.wav"
+                "name": "Hakki Percussion 4.wav",
+                "url": ".\\assets\\Hakki Percussion 2.wav"
             }
         ],
         "hover": [
             {
                 "id": "sfx_hover_1788965178717_820",
-                "name": "悬浮 1.wav"
+                "name": "悬浮 1.wav",
+                "url": ".\\assets\\xuanfu1.wav"
             },
             {
                 "id": "sfx_hover_1788965178722_592",
-                "name": "悬浮 2.wav"
+                "name": "悬浮 2.wav",
+                "url": ".\\assets\\xuanfu2.wav"
             },
             {
                 "id": "sfx_hover_1788965178725_837",
-                "name": "悬浮 3.wav"
+                "name": "悬浮 3.wav",
+                "url": ".\\assets\\xuanfu3.wav"
             }
         ],
         "nav": [
             {
                 "id": "sfx_nav_1788965185739_830",
-                "name": "Hakki Percussion 8.wav"
+                "name": "Hakki Percussion 8.wav",
+                "url": ".\\assets\\Hakki Percussion 8.wav"
             },
             {
                 "id": "sfx_nav_1788965185744_129",
-                "name": "Hakki Percussion 9.wav"
+                "name": "Hakki Percussion 9.wav",
+                "url": ".\\assets\\Hakki Percussion 9.wav"
             }
         ],
         "volume": "0.25"
