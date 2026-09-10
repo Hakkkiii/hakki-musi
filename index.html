@@ -62,7 +62,6 @@
         .sub-info-item { font-size: 0.75rem; color: var(--text-sub); margin-bottom: 2px; transition: color 0.2s; }
         .sub-info-item:hover { color: var(--text-main); }
 
-        /* 复制悬浮轻量提示 */
         #copy-toast {
             position: fixed;
             pointer-events: none;
@@ -487,7 +486,7 @@
         }
 
         function playRandomSFX(type) {
-            // 需求：如果主音乐正在播放，则不响应任何 UI 音效
+            // 音乐播放时自动禁用所有 UI 交互音效
             if (activeMediaEl && !activeMediaEl.paused) return;
 
             const list = sfxCache[type];
@@ -632,7 +631,6 @@
             }
         }
 
-        // 个人信息渲染系统（增加点击一键复制文本功能）
         function renderInfoDisplay() {
             const display = document.getElementById('dynamic-header-display'); 
             display.innerHTML = '';
@@ -642,7 +640,6 @@
                 div.title = "点击复制该信息";
                 
                 div.onclick = (e) => {
-                    // 如果点击的是子批注则交由子项事件处理
                     if (e.target.closest('.sub-info-item')) return;
                     copyTextToClipboard(block.value, e);
                 };
@@ -833,7 +830,6 @@
         const globalPlayer = document.getElementById('global-player');
         
         const gpAudio = new Audio();
-        // 设置全量预加载，避免边播边缓冲导致音频断流
         gpAudio.preload = "auto";
         let activeMediaEl = gpAudio;
         let currentMediaId = null, currentTrackData = null;
@@ -918,7 +914,6 @@
             const cardBtn = document.getElementById(`card-play-btn-${media.id}`);
             const gpBtn = document.getElementById('gp-play-btn');
 
-            // 暂停/继续切换（不从头重新加载）
             if (currentMediaId === mediaId) {
                 togglePlayPause();
                 return;
@@ -946,10 +941,9 @@
 
             globalPlayer.classList.add('active');
 
-            // 预加载/等待缓冲完全可播放机制
             if (gpAudio.src !== targetSrc) {
                 gpAudio.src = targetSrc;
-                gpAudio.load(); // 显式触发预加载全量缓冲
+                gpAudio.load();
             }
             initAudioSource(gpAudio);
 
@@ -964,12 +958,10 @@
                 }).catch(e => console.log('Playback wait:', e));
             };
 
-            // 监听全量缓存可播放（canplaythrough）
             if (gpAudio.readyState >= 4) {
                 startPlayback();
             } else {
                 gpAudio.addEventListener('canplaythrough', startPlayback, { once: true });
-                // 1.5 秒超时兜底，保证即使弱网或特殊音频头格式也能顺利触发播放
                 setTimeout(startPlayback, 1500);
             }
 
@@ -1017,9 +1009,32 @@
             }
         });
 
-        document.getElementById('gp-volume').addEventListener('input', (e) => { 
+        // ==========================================
+        // 🔊 音量推子记忆持久化机制
+        // ==========================================
+        const gpVolumeInput = document.getElementById('gp-volume');
+
+        function initSavedVolume() {
+            try {
+                const savedVol = localStorage.getItem('hakki_player_volume');
+                if (savedVol !== null && !isNaN(parseFloat(savedVol))) {
+                    const parsedVol = Math.max(0, Math.min(1, parseFloat(savedVol)));
+                    gpAudio.volume = parsedVol;
+                    if (gpVolumeInput) gpVolumeInput.value = parsedVol;
+                } else {
+                    gpAudio.volume = parseFloat(gpVolumeInput.value || 1);
+                }
+            } catch (err) {
+                gpAudio.volume = 1;
+            }
+        }
+
+        gpVolumeInput.addEventListener('input', (e) => { 
             const vol = parseFloat(e.target.value);
             gpAudio.volume = vol;
+            try {
+                localStorage.setItem('hakki_player_volume', vol.toString());
+            } catch(err) {}
         });
 
         const eqCanvas = document.getElementById('eq-canvas'); 
@@ -1252,6 +1267,7 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
+            initSavedVolume(); // 恢复用户上次调整的音量参数
             let initialConfig = null;
             if (typeof HAKKI_CONFIG !== 'undefined' && HAKKI_CONFIG) {
                 initialConfig = HAKKI_CONFIG;
