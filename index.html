@@ -166,6 +166,7 @@
         </div>
     </div>
 
+    <!-- 全局悬浮底栏播放器 -->
     <div class="global-player" id="global-player">
         <div class="player-track-info">
             <div class="player-track-title" id="gp-title">未选择曲目</div>
@@ -271,6 +272,9 @@
         let currentFilter = '全部展示';
         let userInteracted = false;
 
+        // ==========================================
+        // 🔊 音效缓存系统（支持静态相对路径与多采样）
+        // ==========================================
         const sfxCache = { click: [], hover: [], nav: [] };
 
         async function preloadSFX() {
@@ -278,11 +282,25 @@
                 sfxCache[type] = [];
                 const items = soundEffects[type] || [];
                 for (let item of items) {
-                    const sfxId = (typeof item === 'object' && item !== null) ? item.id : item;
-                    if (!sfxId) continue;
-                    const blob = await getFileFromDB(sfxId, 'audio/mp3');
-                    if (blob) {
-                        sfxCache[type].push(URL.createObjectURL(blob));
+                    let playUrl = null;
+                    if (typeof item === 'object' && item !== null) {
+                        if (item.url && item.url.trim() !== '') {
+                            playUrl = item.url.trim();
+                        } else if (item.id) {
+                            const blob = await getFileFromDB(item.id, 'audio/mp3');
+                            if (blob) playUrl = URL.createObjectURL(blob);
+                        }
+                    } else if (typeof item === 'string') {
+                        if (item.startsWith('.') || item.startsWith('/') || item.startsWith('http')) {
+                            playUrl = item;
+                        } else {
+                            const blob = await getFileFromDB(item, 'audio/mp3');
+                            if (blob) playUrl = URL.createObjectURL(blob);
+                        }
+                    }
+
+                    if (playUrl) {
+                        sfxCache[type].push(playUrl);
                     }
                 }
             }
@@ -291,7 +309,7 @@
         function playRandomSFX(type) {
             const list = sfxCache[type];
             if (!list || list.length === 0) return;
-            if (type === 'hover' && !userInteracted) return;
+            if ((type === 'hover' || type === 'nav') && !userInteracted) return;
 
             const chosenUrl = list[Math.floor(Math.random() * list.length)];
             const audio = new Audio(chosenUrl);
@@ -350,13 +368,14 @@
                     document.getElementById('bg-overlay').style.opacity = v.bgOverlayOpacity / 100;
                 }
 
-                if (v.bgDbId) {
+                // 壁纸静态路径优先加载
+                if (v.globalBgUrl && v.globalBgUrl.trim() !== '') {
+                    setGlobalBackground(v.globalBgType || 'auto', v.globalBgUrl.trim());
+                } else if (v.bgDbId) {
                     const bgFile = await getFileFromDB(v.bgDbId, v.globalBgType === 'video' ? 'video/mp4' : 'image/jpeg');
                     if (bgFile) {
                         setGlobalBackground(v.globalBgType || 'auto', URL.createObjectURL(bgFile));
                     }
-                } else if (v.globalBgUrl) {
-                    setGlobalBackground(v.globalBgType || 'auto', v.globalBgUrl);
                 } else {
                     clearGlobalBackground();
                 }
@@ -367,7 +386,7 @@
             }
 
             for (let m of mediaFiles) {
-                if (m.dbId && !m.tempUrl) {
+                if (m.dbId && !m.tempUrl && (!m.url || m.url.trim() === '')) {
                     const f = await getFileFromDB(m.dbId, 'audio/mp3');
                     if (f) m.tempUrl = URL.createObjectURL(f);
                 }
@@ -391,6 +410,7 @@
             }
         });
 
+        // 光标系统
         const cursorDot = document.getElementById('cursor-dot'); 
         const cursorRing = document.getElementById('cursor-ring');
         let mouseX = -1000, mouseY = -1000, ringX = -1000, ringY = -1000;
@@ -452,13 +472,19 @@
             const box = document.getElementById('filter-container'); 
             box.innerHTML = '';
             const allCats = ['全部展示', ...categoryBlocks.map(c => c.name)];
-            allCats.forEach(cat => {
+            const uniqueCats = [...new Set(allCats)];
+            uniqueCats.forEach(cat => {
                 const btn = document.createElement('button');
                 btn.className = `filter-btn ui-interactive ${currentFilter === cat ? 'active' : ''}`;
                 btn.innerText = cat;
+                
+                // 分类导览鼠标悬浮触发音效
+                btn.addEventListener('mouseenter', () => {
+                    playRandomSFX('nav');
+                });
+
                 btn.onclick = () => { 
                     currentFilter = cat; 
-                    playRandomSFX('nav');
                     renderFilters(); 
                     filterMediaCards(); 
                 };
@@ -595,7 +621,9 @@
             function seekFromEvent(e) {
                 const rect = wrap.getBoundingClientRect();
                 const pos = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
-                if (currentMediaId !== media.id) playGlobalMedia(media.id);
+                if (currentMediaId !== media.id) {
+                    playGlobalMedia(media.id);
+                }
                 if (activeMediaEl && activeMediaEl.duration) { 
                     activeMediaEl.currentTime = pos * activeMediaEl.duration; 
                     updateProgressUI(); 
@@ -606,14 +634,15 @@
             window.addEventListener('mouseup', () => { isDragging = false; });
         }
 
+        // ==========================================
+        // 核心音频控制器（完美修复声音、暂停/续播与空格键）
+        // ==========================================
         let audioCtx, analyser, dataArray;
         let smoothedBass = 0, smoothedMid = 0, smoothedTreble = 0, kickPulse = 0;
         const globalPlayer = document.getElementById('global-player');
         
+        // 保持单例，不加 crossOrigin 避免本地 file:// 协议静音
         const gpAudio = new Audio();
-        if (location.protocol !== 'file:') {
-            gpAudio.crossOrigin = "anonymous";
-        }
         let activeMediaEl = gpAudio;
         let currentMediaId = null, currentTrackData = null;
 
@@ -628,9 +657,7 @@
                 if (audioCtx.state === 'suspended') {
                     audioCtx.resume().catch(() => {});
                 }
-            } catch (err) {
-                console.warn('AudioContext 初始化受限:', err);
-            }
+            } catch (err) {}
         }
 
         function initAudioSource(audioEl) {
@@ -642,7 +669,9 @@
                     analyser.connect(audioCtx.destination);
                     audioEl._hasAudioSource = true;
                 }
-            } catch(e) {}
+            } catch(e) {
+                // 如果本地安全策略阻止 source 注入，audioEl 原生仍保证有声音输出
+            }
         }
 
         function analyzeAudio() {
@@ -665,26 +694,63 @@
             } catch(err) {}
         }
 
+        // 核心修复：暂停/续播切换函数（避免从头重播）
+        function togglePlayPause() {
+            if (!activeMediaEl) return;
+            if (!currentMediaId) {
+                // 如果尚未选择过曲目，默认播放第一首
+                if (mediaFiles && mediaFiles.length > 0) {
+                    playGlobalMedia(mediaFiles[0].id);
+                }
+                return;
+            }
+
+            ensureAudioContext();
+            const cardBtn = document.getElementById(`card-play-btn-${currentMediaId}`);
+            const gpBtn = document.getElementById('gp-play-btn');
+
+            if (activeMediaEl.paused) {
+                activeMediaEl.play().then(() => {
+                    if (gpBtn) gpBtn.innerText = '⏸';
+                    if (cardBtn) cardBtn.innerText = '⏸';
+                    startEQAnimation();
+                }).catch(e => console.log('Play wait:', e));
+            } else {
+                activeMediaEl.pause();
+                if (gpBtn) gpBtn.innerText = '▶';
+                if (cardBtn) cardBtn.innerText = '▶';
+            }
+        }
+
         function playGlobalMedia(mediaId) {
             ensureAudioContext();
             const media = mediaFiles.find(m => m.id === mediaId); 
             if (!media) return;
 
-            if (activeMediaEl && !activeMediaEl.paused && currentMediaId !== mediaId) {
-                activeMediaEl.pause();
-                if (currentMediaId) {
-                    const oldBtn = document.getElementById(`card-play-btn-${currentMediaId}`);
-                    if (oldBtn) oldBtn.innerText = '▶';
-                }
+            const cardBtn = document.getElementById(`card-play-btn-${media.id}`);
+            const gpBtn = document.getElementById('gp-play-btn');
+
+            // 核心修复：如果点击的是当前正在播放/选中的同一首歌曲，执行【暂停/继续】，绝不从头重新加载！
+            if (currentMediaId === mediaId) {
+                togglePlayPause();
+                return;
             }
 
-            const isSwitchingMedia = (currentMediaId !== mediaId);
+            // 切换到全新曲目：重置上一首的按钮图标
+            if (currentMediaId) {
+                const oldBtn = document.getElementById(`card-play-btn-${currentMediaId}`);
+                if (oldBtn) oldBtn.innerText = '▶';
+            }
+
             currentMediaId = mediaId;
             currentTrackData = media;
 
-            const targetSrc = media.tempUrl || media.url;
+            const targetSrc = (media.url && media.url.trim() !== '') ? media.url.trim() : media.tempUrl;
             activeMediaEl = gpAudio;
-            if (gpAudio.src !== targetSrc) gpAudio.src = targetSrc;
+
+            if (gpAudio.src !== targetSrc) {
+                gpAudio.src = targetSrc;
+            }
             initAudioSource(gpAudio);
 
             document.getElementById('gp-title').innerText = media.title;
@@ -696,22 +762,14 @@
                 switchBackgroundEngine(media.particleColors?.length >= 2 ? media.particleColors : null, media.particleEngine);
             } else switchBackgroundEngine();
 
-            if (isSwitchingMedia || activeMediaEl.paused) {
-                activeMediaEl.play().then(() => {
-                    document.getElementById('gp-play-btn').innerText = '⏸';
-                    const cardBtn = document.getElementById(`card-play-btn-${media.id}`);
-                    if (cardBtn) cardBtn.innerText = '⏸';
-                }).catch(e => console.log('Autoplay wait:', e));
-            } else {
-                activeMediaEl.pause();
-                document.getElementById('gp-play-btn').innerText = '▶';
-                const cardBtn = document.getElementById(`card-play-btn-${media.id}`);
-                if (cardBtn) cardBtn.innerText = '▶';
-            }
+            activeMediaEl.play().then(() => {
+                if (gpBtn) gpBtn.innerText = '⏸';
+                if (cardBtn) cardBtn.innerText = '⏸';
+                startEQAnimation();
+            }).catch(e => console.log('Autoplay wait:', e));
 
             activeMediaEl.ontimeupdate = updateProgressUI;
             globalPlayer.classList.add('active');
-            startEQAnimation();
         }
 
         const gpProgress = document.getElementById('gp-progress'), gpProgressFill = document.getElementById('gp-progress-fill');
@@ -743,18 +801,18 @@
             updateProgressUI();
         });
 
+        // 底栏播放按钮绑定
         document.getElementById('gp-play-btn').addEventListener('click', () => {
-            if (!activeMediaEl || !currentMediaId) return;
-            ensureAudioContext();
-            const cardBtn = document.getElementById(`card-play-btn-${currentMediaId}`);
-            if (activeMediaEl.paused) { 
-                activeMediaEl.play().catch(() => {}); 
-                document.getElementById('gp-play-btn').innerText = '⏸'; 
-                if (cardBtn) cardBtn.innerText = '⏸'; 
-            } else { 
-                activeMediaEl.pause(); 
-                document.getElementById('gp-play-btn').innerText = '▶'; 
-                if (cardBtn) cardBtn.innerText = '▶'; 
+            togglePlayPause();
+        });
+
+        // 全局空格键监听：空格暂停/播放
+        window.addEventListener('keydown', (e) => {
+            if (e.code === 'Space' || e.key === ' ') {
+                // 如果焦点在输入框中则不触发播放快捷键
+                if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+                e.preventDefault(); // 阻止页面向下滚动
+                togglePlayPause();
             }
         });
 
@@ -795,6 +853,7 @@
             }
         }
 
+        // 20 大背景特效系统
         const canvas = document.getElementById('bg-canvas'); 
         const ctx = canvas.getContext('2d');
         let engineData = [], animationId, time = 0, mousePhys = { action: 0 };
