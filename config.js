@@ -18,10 +18,10 @@ const HAKKI_CONFIG = {
             "#828282",
             "#9ca3af"
         ],
-        "globalBgUrl": ".\\assets\\hakki white.png",
-        "globalBgType": "image",
-        "bgDbId": "global_bg_1788970044917",
-        "bgOverlayOpacity": "4"
+        "globalBgUrl": ".\\assets\\hakki withe.mp4",
+        "globalBgType": "video",
+        "bgDbId": "global_bg_1789025302837",
+        "bgOverlayOpacity": "15"
     },
     "infoBlocks": [
         {
