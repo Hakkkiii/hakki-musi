@@ -16,15 +16,8 @@
         }
         * { box-sizing: border-box; margin: 0; padding: 0; }
 
-        /* 全局选中高亮主题色适配 */
-        ::selection {
-            background-color: var(--theme-color);
-            color: #ffffff;
-        }
-        ::-moz-selection {
-            background-color: var(--theme-color);
-            color: #ffffff;
-        }
+        ::selection { background-color: var(--theme-color); color: #ffffff; }
+        ::-moz-selection { background-color: var(--theme-color); color: #ffffff; }
 
         body { 
             cursor: none; 
@@ -51,7 +44,6 @@
 
         #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
 
-        /* 顶部个人信息置顶吸附 & 毛玻璃背景样式 */
         header { 
             display: flex; 
             flex-wrap: wrap; 
@@ -95,10 +87,7 @@
             opacity: 0;
             transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), transform 0.25s cubic-bezier(0.16, 1, 0.3, 1);
         }
-        #copy-toast.show {
-            opacity: 1;
-            transform: translate(-50%, -150%);
-        }
+        #copy-toast.show { opacity: 1; transform: translate(-50%, -150%); }
 
         .container { max-width: 1300px; margin: 20px auto 40px; padding: 0 25px; position: relative; z-index: 1; display: flex; flex-direction: column; gap: 30px; }
         .layout-sidebar .main-content { display: grid; grid-template-columns: 240px 1fr; gap: 40px; align-items: start; }
@@ -195,131 +184,37 @@
         input[type="range"].volume-bar { -webkit-appearance: none; width: 100%; height: 4px; background: rgba(128,128,128,0.3); border-radius: 2px; }
         input[type="range"].volume-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--theme-color); transition: 0.2s;}
 
-        /* 移动端针对性响应式规则 */
         @media (max-width: 768px) {
-            body { 
-                cursor: auto !important; 
-                padding-bottom: 160px; 
-            }
-            a, button, select, .ui-interactive { 
-                cursor: pointer !important; 
-            }
-            #cursor-dot, #cursor-ring { 
-                display: none !important; 
-            }
-            header { 
-                padding: 15px 16px 10px; 
-            }
-            #dynamic-header-display { 
-                gap: 16px; 
-                flex-direction: column; 
-                width: 100%; 
-            }
-            .info-block.is-title .value { 
-                font-size: 1.45rem; 
-            }
-            .container { 
-                margin: 10px auto 30px; 
-                padding: 0 14px; 
-                gap: 16px; 
-            }
-            .layout-sidebar .main-content { 
-                display: flex; 
-                flex-direction: column; 
-                gap: 16px; 
-            }
+            body { cursor: auto !important; padding-bottom: 160px; }
+            a, button, select, .ui-interactive { cursor: pointer !important; }
+            #cursor-dot, #cursor-ring { display: none !important; }
+            header { padding: 15px 16px 10px; }
+            #dynamic-header-display { gap: 16px; flex-direction: column; width: 100%; }
+            .info-block.is-title .value { font-size: 1.45rem; }
+            .container { margin: 10px auto 30px; padding: 0 14px; gap: 16px; }
+            .layout-sidebar .main-content { display: flex; flex-direction: column; gap: 16px; }
             .filters, .layout-sidebar .filters { 
-                display: flex; 
-                flex-wrap: nowrap; 
-                overflow-x: auto; 
-                justify-content: flex-start; 
-                width: 100%; 
-                padding: 4px 0 10px; 
-                position: static; 
-                -webkit-overflow-scrolling: touch; 
-                scrollbar-width: none; 
+                display: flex; flex-wrap: nowrap; overflow-x: auto; justify-content: flex-start; 
+                width: 100%; padding: 4px 0 10px; position: static; -webkit-overflow-scrolling: touch; scrollbar-width: none; 
             }
-            .filters::-webkit-scrollbar { 
-                display: none; 
-            }
-            .filter-btn { 
-                flex-shrink: 0; 
-                padding: 7px 16px; 
-                font-size: 0.82rem; 
-                white-space: nowrap; 
-            }
-            .media-grid.list-view .media-card, .media-card { 
-                flex-direction: column !important; 
-                align-items: stretch !important; 
-                padding: 16px 14px !important; 
-                gap: 14px !important; 
-            }
-            .media-grid.list-view .media-header { 
-                width: 100% !important; 
-            }
-            .media-title { 
-                font-size: 1.05rem; 
-            }
-            .media-grid.list-view .audio-player-ui { 
-                width: 100% !important; 
-                gap: 10px; 
-                padding: 8px 10px; 
-            }
-            .card-waveform-wrap { 
-                height: 44px; 
-            }
-            .play-toggle { 
-                width: 38px; 
-                height: 38px; 
-                font-size: 0.9rem; 
-            }
-            .media-grid.list-view .card-footer { 
-                width: 100% !important; 
-                justify-content: space-between; 
-                padding-top: 10px; 
-                border-top: 1px dashed var(--card-border); 
-            }
-            .global-player { 
-                left: 10px; 
-                right: 10px; 
-                height: auto; 
-                padding: 12px 14px; 
-                gap: 10px; 
-                flex-wrap: wrap; 
-                border-radius: 18px !important; 
-            }
-            .global-player.active { 
-                bottom: 12px; 
-            }
-            .player-track-info { 
-                width: auto; 
-                flex: 1; 
-                min-width: 160px; 
-            }
-            .player-track-title { 
-                font-size: 0.88rem; 
-                white-space: nowrap; 
-                overflow: hidden; 
-                text-overflow: ellipsis; 
-            }
-            .player-track-author { 
-                font-size: 0.72rem; 
-            }
-            .player-controls { 
-                margin-left: auto; 
-            }
-            .global-play-btn { 
-                width: 40px; 
-                height: 40px; 
-                font-size: 1rem; 
-            }
-            .player-progress-wrap { 
-                width: 100%; 
-                order: 3; 
-            }
-            #eq-canvas, .player-volume-wrap { 
-                display: none !important; 
-            }
+            .filters::-webkit-scrollbar { display: none; }
+            .filter-btn { flex-shrink: 0; padding: 7px 16px; font-size: 0.82rem; white-space: nowrap; }
+            .media-grid.list-view .media-card, .media-card { flex-direction: column !important; align-items: stretch !important; padding: 16px 14px !important; gap: 14px !important; }
+            .media-grid.list-view .media-header { width: 100% !important; }
+            .media-title { font-size: 1.05rem; }
+            .media-grid.list-view .audio-player-ui { width: 100% !important; gap: 10px; padding: 8px 10px; }
+            .card-waveform-wrap { height: 44px; }
+            .play-toggle { width: 38px; height: 38px; font-size: 0.9rem; }
+            .media-grid.list-view .card-footer { width: 100% !important; justify-content: space-between; padding-top: 10px; border-top: 1px dashed var(--card-border); }
+            .global-player { left: 10px; right: 10px; height: auto; padding: 12px 14px; gap: 10px; flex-wrap: wrap; border-radius: 18px !important; }
+            .global-player.active { bottom: 12px; }
+            .player-track-info { width: auto; flex: 1; min-width: 160px; }
+            .player-track-title { font-size: 0.88rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+            .player-track-author { font-size: 0.72rem; }
+            .player-controls { margin-left: auto; }
+            .global-play-btn { width: 40px; height: 40px; font-size: 1rem; }
+            .player-progress-wrap { width: 100%; order: 3; }
+            #eq-canvas, .player-volume-wrap { display: none !important; }
         }
     </style>
 </head>
@@ -373,9 +268,6 @@
     <script src="config.js" onerror="console.log('未检测到 config.js，将启用本地兜底方案')"></script>
 
     <script>
-        // 💡 手机端专属图片壁纸备用路径（你可以根据实际放进 assets 的图片名修改，默认选用 hakki-white.png）
-        const MOBILE_FALLBACK_IMAGE = './assets/hakki-white.png';
-
         const DEFAULT_FALLBACK_CONFIG = {
             visuals: {
                 theme: "#8b5cf6",
@@ -391,7 +283,9 @@
                 bgEngine: 0,
                 density: 300,
                 palette: ['#1e3a8a', '#06b6d4', '#fbbf24', '#9ca3af'],
-                bgOverlayOpacity: 100
+                bgOverlayOpacity: 100,
+                globalBgUrl: "",
+                mobileBgUrl: "./assets/hakki-white.png"
             },
             infoBlocks: [
                 { id: 1, label: "Creator", value: "hakki", isTitle: true, children: ["音乐制作人 / 视觉艺术家"] },
@@ -451,8 +345,8 @@
         let soundEffects = { click: [], hover: [], nav: [], volume: 0.6 };
         let currentFilter = '全部展示';
         let userInteracted = false;
+        let globalVisualConfig = null;
 
-        // 剪贴板复制并展示轻量气泡提示
         function copyTextToClipboard(text, event) {
             if (!text) return;
             navigator.clipboard.writeText(text).then(() => {
@@ -471,9 +365,6 @@
             }).catch(() => {});
         }
 
-        // ==========================================
-        // 🔊 音效缓存与智能静音控制
-        // ==========================================
         const sfxCache = { click: [], hover: [], nav: [] };
 
         async function preloadSFX() {
@@ -506,7 +397,6 @@
         }
 
         function playRandomSFX(type) {
-            // 音乐播放时自动禁用所有 UI 交互音效
             if (activeMediaEl && !activeMediaEl.paused) return;
 
             const list = sfxCache[type];
@@ -544,6 +434,7 @@
 
             if (cfg.visuals) {
                 const v = cfg.visuals;
+                globalVisualConfig = v;
                 document.documentElement.style.setProperty('--theme-color', v.theme || '#8b5cf6');
                 document.documentElement.style.setProperty('--theme-rgb', hexToRgbVals(v.theme || '#8b5cf6'));
                 document.documentElement.style.setProperty('--bg-color', v.bg || '#050505');
@@ -570,17 +461,8 @@
                     document.getElementById('bg-overlay').style.opacity = v.bgOverlayOpacity / 100;
                 }
 
-                // 背景加载（智能判断：手机端图片，PC 端视频）
-                if (v.globalBgUrl && v.globalBgUrl.trim() !== '') {
-                    setGlobalBackground(v.globalBgType || 'auto', v.globalBgUrl.trim());
-                } else if (v.bgDbId) {
-                    const bgFile = await getFileFromDB(v.bgDbId, v.globalBgType === 'video' ? 'video/mp4' : 'image/jpeg');
-                    if (bgFile) {
-                        setGlobalBackground(v.globalBgType || 'auto', URL.createObjectURL(bgFile));
-                    }
-                } else {
-                    clearGlobalBackground();
-                }
+                // 核心：智能分流加载背景（手机读 mobileBgUrl 图片，电脑读视频/大图）
+                renderAdaptiveBackground();
 
                 currentPalette = v.palette || ['#1e3a8a', '#06b6d4', '#fbbf24', '#9ca3af'];
                 currentEngine = parseInt(v.bgEngine || 0);
@@ -598,6 +480,31 @@
             renderFilters();
             renderMedia();
             switchBackgroundEngine();
+        }
+
+        // 设备自适应背景渲染
+        async function renderAdaptiveBackground() {
+            if (!globalVisualConfig) return;
+            const v = globalVisualConfig;
+            const isMobile = window.innerWidth <= 768 || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+
+            // 手机端优先尝试加载手机专属图片壁纸
+            if (isMobile && v.mobileBgUrl && v.mobileBgUrl.trim() !== '') {
+                setGlobalBackground('image', v.mobileBgUrl.trim());
+                return;
+            }
+
+            // PC 端或未单独配置手机壁纸时，走常规背景
+            if (v.globalBgUrl && v.globalBgUrl.trim() !== '') {
+                setGlobalBackground(v.globalBgType || 'auto', v.globalBgUrl.trim());
+            } else if (v.bgDbId) {
+                const bgFile = await getFileFromDB(v.bgDbId, v.globalBgType === 'video' ? 'video/mp4' : 'image/jpeg');
+                if (bgFile) {
+                    setGlobalBackground(v.globalBgType || 'auto', URL.createObjectURL(bgFile));
+                }
+            } else {
+                clearGlobalBackground();
+            }
         }
 
         if (syncChannel) {
@@ -630,26 +537,16 @@
         let activeBgMedia = null;
         function detectMediaType(url) { return /\.(mp4|webm|ogg|mov)$/i.test(url.split('?')[0].toLowerCase()) ? 'video' : 'image'; }
         
-        // 📱 核心升级：手机端自动降级为静态图片，PC 端使用视频壁纸
         function setGlobalBackground(type, url) {
             if (!url) return;
             const container = document.getElementById('bg-media-container');
             if (type === 'auto') type = detectMediaType(url);
-            
-            // 判断是否为手机移动端设备（屏幕宽度 <= 768px 或具备 touch 触控特性）
-            const isMobileDevice = window.innerWidth <= 768 || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
 
             let newEl;
-            // 如果是手机端，且目标是视频，则直接降级使用静态壁纸图片
-            if (isMobileDevice && type === 'video') {
-                newEl = document.createElement('img');
-                // 优先使用你指定的手机备用图片，如无则使用兜底图
-                newEl.src = MOBILE_FALLBACK_IMAGE || './assets/hakki-white.png';
-            } else if (type === 'image') { 
+            if (type === 'image') { 
                 newEl = document.createElement('img'); 
                 newEl.src = url; 
             } else { 
-                // PC 端正常创建并播放 MP4 视频
                 newEl = document.createElement('video'); 
                 newEl.src = url;
                 newEl.autoplay = true; 
@@ -661,9 +558,7 @@
                 newEl.setAttribute('webkit-playsinline', '');
                 newEl.preload = 'auto';
 
-                const attemptPlay = () => {
-                    newEl.play().catch(() => {});
-                };
+                const attemptPlay = () => { newEl.play().catch(() => {}); };
                 newEl.addEventListener('loadedmetadata', attemptPlay, { once: true });
                 newEl.addEventListener('canplay', attemptPlay, { once: true });
             }
@@ -699,7 +594,6 @@
             }
         }
 
-        // 个人信息渲染系统（点击复制）
         function renderInfoDisplay() {
             const display = document.getElementById('dynamic-header-display'); 
             display.innerHTML = '';
@@ -892,7 +786,7 @@
         }
 
         // ==========================================
-        // 全局音频控制器（非流式预加载与全量缓冲机制）
+        // 全局音频控制器
         // ==========================================
         let audioCtx, analyser, dataArray;
         let smoothedBass = 0, smoothedMid = 0, smoothedTreble = 0, kickPulse = 0;
@@ -1078,9 +972,7 @@
             }
         });
 
-        // ==========================================
-        // 🔊 音量推子记忆持久化机制
-        // ==========================================
+        // 音量推子记忆
         const gpVolumeInput = document.getElementById('gp-volume');
 
         function initSavedVolume() {
@@ -1330,13 +1222,14 @@
         }
 
         window.addEventListener('resize', () => { 
+            renderAdaptiveBackground(); // 窗口尺寸改变时自适应重选壁纸
             switchBackgroundEngine(); 
             resizeEQCanvas(); 
             mediaFiles.forEach(m => { if(m.type === 'audio') initCardWaveformInteraction(m); });
         });
 
         window.addEventListener('DOMContentLoaded', () => {
-            initSavedVolume(); // 恢复上次调整的音量记忆
+            initSavedVolume();
             let initialConfig = null;
             if (typeof HAKKI_CONFIG !== 'undefined' && HAKKI_CONFIG) {
                 initialConfig = HAKKI_CONFIG;
