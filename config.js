@@ -19,9 +19,10 @@ const HAKKI_CONFIG = {
             "#9ca3af"
         ],
         "globalBgUrl": ".\\assets\\hakki withe.mp4",
+        "mobileBgUrl": ".\\assets\\hakki withe.png",
         "globalBgType": "video",
         "bgDbId": "global_bg_1789025302837",
-        "bgOverlayOpacity": "15"
+        "bgOverlayOpacity": "67"
     },
     "infoBlocks": [
         {
