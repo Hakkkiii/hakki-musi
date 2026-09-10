@@ -51,7 +51,24 @@
 
         #bg-canvas { position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1; pointer-events: none; }
 
-        header { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 20px; padding: 25px 5% 15px; background: transparent; position: relative; z-index: 100; }
+        /* 顶部个人信息置顶吸附 & 毛玻璃背景样式 */
+        header { 
+            display: flex; 
+            flex-wrap: wrap; 
+            justify-content: space-between; 
+            align-items: center; 
+            gap: 20px; 
+            padding: 16px 5%; 
+            position: sticky; 
+            top: 0; 
+            z-index: 1000; 
+            background: rgba(var(--bg-rgb), 0.75); 
+            backdrop-filter: blur(16px); 
+            -webkit-backdrop-filter: blur(16px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+            transition: background 0.3s ease, border-color 0.3s ease;
+        }
+
         #dynamic-header-display { display: flex; flex-wrap: wrap; gap: 35px; align-items: flex-start; flex: 1; }
         .info-block { display: flex; flex-direction: column; gap: 2px; transition: transform 0.3s; position: relative; }
         .info-block:hover { transform: scale(1.05); }
@@ -631,6 +648,7 @@
             }
         }
 
+        // 个人信息渲染系统（点击复制）
         function renderInfoDisplay() {
             const display = document.getElementById('dynamic-header-display'); 
             display.innerHTML = '';
@@ -1267,7 +1285,7 @@
         });
 
         window.addEventListener('DOMContentLoaded', () => {
-            initSavedVolume(); // 恢复用户上次调整的音量参数
+            initSavedVolume(); // 恢复上次调整的音量记忆
             let initialConfig = null;
             if (typeof HAKKI_CONFIG !== 'undefined' && HAKKI_CONFIG) {
                 initialConfig = HAKKI_CONFIG;
