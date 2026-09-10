@@ -145,6 +145,155 @@
         .player-volume-wrap { display: flex; align-items: center; gap: 8px; width: 100px; flex-shrink: 0; }
         input[type="range"].volume-bar { -webkit-appearance: none; width: 100%; height: 4px; background: rgba(128,128,128,0.3); border-radius: 2px; }
         input[type="range"].volume-bar::-webkit-slider-thumb { -webkit-appearance: none; width: 10px; height: 10px; border-radius: 50%; background: var(--theme-color); transition: 0.2s;}
+
+        /* ==========================================================================
+           📱 移动端与竖屏触屏针对性自适应重构 (Media Queries)
+           ========================================================================== */
+        @media (max-width: 768px) {
+            /* 1. 触屏恢复原生手势交互，隐藏专属跟随鼠标指针 */
+            body { 
+                cursor: auto !important; 
+                padding-bottom: 160px; 
+            }
+            a, button, select, .ui-interactive { 
+                cursor: pointer !important; 
+            }
+            #cursor-dot, #cursor-ring { 
+                display: none !important; 
+            }
+
+            /* 2. 顶栏文字弹性折行收拢 */
+            header { 
+                padding: 15px 16px 10px; 
+            }
+            #dynamic-header-display { 
+                gap: 16px; 
+                flex-direction: column; 
+                width: 100%; 
+            }
+            .info-block.is-title .value { 
+                font-size: 1.45rem; 
+            }
+
+            /* 3. 布局与主内容容器尺寸压缩 */
+            .container { 
+                margin: 10px auto 30px; 
+                padding: 0 14px; 
+                gap: 16px; 
+            }
+            .layout-sidebar .main-content { 
+                display: flex; 
+                flex-direction: column; 
+                gap: 16px; 
+            }
+
+            /* 4. 分类过滤器横向滚动吸附体验 */
+            .filters, .layout-sidebar .filters { 
+                display: flex; 
+                flex-wrap: nowrap; 
+                overflow-x: auto; 
+                justify-content: flex-start; 
+                width: 100%; 
+                padding: 4px 0 10px; 
+                position: static; 
+                -webkit-overflow-scrolling: touch; 
+                scrollbar-width: none; 
+            }
+            .filters::-webkit-scrollbar { 
+                display: none; 
+            }
+            .filter-btn { 
+                flex-shrink: 0; 
+                padding: 7px 16px; 
+                font-size: 0.82rem; 
+                white-space: nowrap; 
+            }
+
+            /* 5. 作品卡片：彻底转为竖向流线排版 */
+            .media-grid.list-view .media-card, .media-card { 
+                flex-direction: column !important; 
+                align-items: stretch !important; 
+                padding: 16px 14px !important; 
+                gap: 14px !important; 
+            }
+            .media-grid.list-view .media-header { 
+                width: 100% !important; 
+            }
+            .media-title { 
+                font-size: 1.05rem; 
+            }
+
+            /* 播放器交互与波形通栏 */
+            .media-grid.list-view .audio-player-ui { 
+                width: 100% !important; 
+                gap: 10px; 
+                padding: 8px 10px; 
+            }
+            .card-waveform-wrap { 
+                height: 44px; 
+            }
+            .play-toggle { 
+                width: 38px; 
+                height: 38px; 
+                font-size: 0.9rem; 
+            }
+
+            .media-grid.list-view .card-footer { 
+                width: 100% !important; 
+                justify-content: space-between; 
+                padding-top: 10px; 
+                border-top: 1px dashed var(--card-border); 
+            }
+
+            /* 6. 全局底部播放器：紧凑化两行流线架构 */
+            .global-player { 
+                left: 10px; 
+                right: 10px; 
+                height: auto; 
+                padding: 12px 14px; 
+                gap: 10px; 
+                flex-wrap: wrap; 
+                border-radius: 18px !important; 
+            }
+            .global-player.active { 
+                bottom: 12px; 
+            }
+
+            /* 第一行：曲目信息 + 播放暂停主按钮 */
+            .player-track-info { 
+                width: auto; 
+                flex: 1; 
+                min-width: 160px; 
+            }
+            .player-track-title { 
+                font-size: 0.88rem; 
+                white-space: nowrap; 
+                overflow: hidden; 
+                text-overflow: ellipsis; 
+            }
+            .player-track-author { 
+                font-size: 0.72rem; 
+            }
+            .player-controls { 
+                margin-left: auto; 
+            }
+            .global-play-btn { 
+                width: 40px; 
+                height: 40px; 
+                font-size: 1rem; 
+            }
+
+            /* 第二行：进度条铺满宽度 */
+            .player-progress-wrap { 
+                width: 100%; 
+                order: 3; 
+            }
+
+            /* 隐藏手机端占用空间的部件 */
+            #eq-canvas, .player-volume-wrap { 
+                display: none !important; 
+            }
+        }
     </style>
 </head>
 <body data-player-style="glass" data-card-shape="modern">
@@ -641,7 +790,6 @@
         let smoothedBass = 0, smoothedMid = 0, smoothedTreble = 0, kickPulse = 0;
         const globalPlayer = document.getElementById('global-player');
         
-        // 保持单例，不加 crossOrigin 避免本地 file:// 协议静音
         const gpAudio = new Audio();
         let activeMediaEl = gpAudio;
         let currentMediaId = null, currentTrackData = null;
@@ -669,9 +817,7 @@
                     analyser.connect(audioCtx.destination);
                     audioEl._hasAudioSource = true;
                 }
-            } catch(e) {
-                // 如果本地安全策略阻止 source 注入，audioEl 原生仍保证有声音输出
-            }
+            } catch(e) {}
         }
 
         function analyzeAudio() {
@@ -694,11 +840,9 @@
             } catch(err) {}
         }
 
-        // 核心修复：暂停/续播切换函数（避免从头重播）
         function togglePlayPause() {
             if (!activeMediaEl) return;
             if (!currentMediaId) {
-                // 如果尚未选择过曲目，默认播放第一首
                 if (mediaFiles && mediaFiles.length > 0) {
                     playGlobalMedia(mediaFiles[0].id);
                 }
@@ -730,13 +874,11 @@
             const cardBtn = document.getElementById(`card-play-btn-${media.id}`);
             const gpBtn = document.getElementById('gp-play-btn');
 
-            // 核心修复：如果点击的是当前正在播放/选中的同一首歌曲，执行【暂停/继续】，绝不从头重新加载！
             if (currentMediaId === mediaId) {
                 togglePlayPause();
                 return;
             }
 
-            // 切换到全新曲目：重置上一首的按钮图标
             if (currentMediaId) {
                 const oldBtn = document.getElementById(`card-play-btn-${currentMediaId}`);
                 if (oldBtn) oldBtn.innerText = '▶';
@@ -801,17 +943,14 @@
             updateProgressUI();
         });
 
-        // 底栏播放按钮绑定
         document.getElementById('gp-play-btn').addEventListener('click', () => {
             togglePlayPause();
         });
 
-        // 全局空格键监听：空格暂停/播放
         window.addEventListener('keydown', (e) => {
             if (e.code === 'Space' || e.key === ' ') {
-                // 如果焦点在输入框中则不触发播放快捷键
                 if (['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
-                e.preventDefault(); // 阻止页面向下滚动
+                e.preventDefault();
                 togglePlayPause();
             }
         });
@@ -853,7 +992,6 @@
             }
         }
 
-        // 20 大背景特效系统
         const canvas = document.getElementById('bg-canvas'); 
         const ctx = canvas.getContext('2d');
         let engineData = [], animationId, time = 0, mousePhys = { action: 0 };
