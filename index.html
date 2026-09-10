@@ -373,6 +373,9 @@
     <script src="config.js" onerror="console.log('未检测到 config.js，将启用本地兜底方案')"></script>
 
     <script>
+        // 💡 手机端专属图片壁纸备用路径（你可以根据实际放进 assets 的图片名修改，默认选用 hakki-white.png）
+        const MOBILE_FALLBACK_IMAGE = './assets/hakki-white.png';
+
         const DEFAULT_FALLBACK_CONFIG = {
             visuals: {
                 theme: "#8b5cf6",
@@ -567,6 +570,7 @@
                     document.getElementById('bg-overlay').style.opacity = v.bgOverlayOpacity / 100;
                 }
 
+                // 背景加载（智能判断：手机端图片，PC 端视频）
                 if (v.globalBgUrl && v.globalBgUrl.trim() !== '') {
                     setGlobalBackground(v.globalBgType || 'auto', v.globalBgUrl.trim());
                 } else if (v.bgDbId) {
@@ -626,16 +630,26 @@
         let activeBgMedia = null;
         function detectMediaType(url) { return /\.(mp4|webm|ogg|mov)$/i.test(url.split('?')[0].toLowerCase()) ? 'video' : 'image'; }
         
-        // 针对移动端强化 MP4 视频壁纸加载与播放
+        // 📱 核心升级：手机端自动降级为静态图片，PC 端使用视频壁纸
         function setGlobalBackground(type, url) {
             if (!url) return;
             const container = document.getElementById('bg-media-container');
             if (type === 'auto') type = detectMediaType(url);
+            
+            // 判断是否为手机移动端设备（屏幕宽度 <= 768px 或具备 touch 触控特性）
+            const isMobileDevice = window.innerWidth <= 768 || ('ontouchstart' in window && navigator.maxTouchPoints > 0);
+
             let newEl;
-            if (type === 'image') { 
+            // 如果是手机端，且目标是视频，则直接降级使用静态壁纸图片
+            if (isMobileDevice && type === 'video') {
+                newEl = document.createElement('img');
+                // 优先使用你指定的手机备用图片，如无则使用兜底图
+                newEl.src = MOBILE_FALLBACK_IMAGE || './assets/hakki-white.png';
+            } else if (type === 'image') { 
                 newEl = document.createElement('img'); 
                 newEl.src = url; 
             } else { 
+                // PC 端正常创建并播放 MP4 视频
                 newEl = document.createElement('video'); 
                 newEl.src = url;
                 newEl.autoplay = true; 
@@ -645,25 +659,15 @@
                 newEl.setAttribute('muted', '');
                 newEl.setAttribute('playsinline', '');
                 newEl.setAttribute('webkit-playsinline', '');
-                newEl.setAttribute('x5-playsinline', '');
-                newEl.setAttribute('x5-video-player-type', 'h5-page');
                 newEl.preload = 'auto';
 
                 const attemptPlay = () => {
-                    newEl.play().catch(() => {
-                        const onTouchWake = () => {
-                            newEl.play().catch(() => {});
-                            window.removeEventListener('touchstart', onTouchWake);
-                            window.removeEventListener('pointerdown', onTouchWake);
-                        };
-                        window.addEventListener('touchstart', onTouchWake, { once: true });
-                        window.addEventListener('pointerdown', onTouchWake, { once: true });
-                    });
+                    newEl.play().catch(() => {});
                 };
-
                 newEl.addEventListener('loadedmetadata', attemptPlay, { once: true });
                 newEl.addEventListener('canplay', attemptPlay, { once: true });
             }
+
             newEl.className = 'bg-media-item'; 
             container.appendChild(newEl); 
             void newEl.offsetWidth; 
