@@ -36,11 +36,12 @@ const HAKKI_CONFIG = {
         {
             "id": 3,
             "label": "Contact",
-            "value": "WeChat: Hakki0816",
+            "value": "WeChat/Phone/Email",
             "isTitle": false,
             "children": [
-                "Phone:16536660816",
-                "Email:794021576@qq.com"
+                "Hakki0816",
+                "16536660816",
+                "794021576@qq.com"
             ]
         }
     ],
@@ -193,7 +194,7 @@ const HAKKI_CONFIG = {
                 "Drum&bass"
             ],
             "cardColor": "#000000",
-            "particleEngine": 11,
+            "particleEngine": 14,
             "particleColors": [
                 "#000000",
                 "#ff5c5c"
