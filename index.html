@@ -625,20 +625,67 @@
 
         let activeBgMedia = null;
         function detectMediaType(url) { return /\.(mp4|webm|ogg|mov)$/i.test(url.split('?')[0].toLowerCase()) ? 'video' : 'image'; }
+        
+        // 针对移动端强化 MP4 视频壁纸加载与播放
         function setGlobalBackground(type, url) {
             if (!url) return;
             const container = document.getElementById('bg-media-container');
             if (type === 'auto') type = detectMediaType(url);
             let newEl;
-            if (type === 'image') { newEl = document.createElement('img'); newEl.src = url; }
-            else { newEl = document.createElement('video'); newEl.autoplay = true; newEl.loop = true; newEl.muted = true; newEl.playsInline = true; newEl.src = url; }
-            newEl.className = 'bg-media-item'; container.appendChild(newEl); void newEl.offsetWidth; newEl.classList.add('active');
+            if (type === 'image') { 
+                newEl = document.createElement('img'); 
+                newEl.src = url; 
+            } else { 
+                newEl = document.createElement('video'); 
+                newEl.src = url;
+                newEl.autoplay = true; 
+                newEl.loop = true; 
+                newEl.muted = true; 
+                newEl.playsInline = true; 
+                newEl.setAttribute('muted', '');
+                newEl.setAttribute('playsinline', '');
+                newEl.setAttribute('webkit-playsinline', '');
+                newEl.setAttribute('x5-playsinline', '');
+                newEl.setAttribute('x5-video-player-type', 'h5-page');
+                newEl.preload = 'auto';
+
+                const attemptPlay = () => {
+                    newEl.play().catch(() => {
+                        const onTouchWake = () => {
+                            newEl.play().catch(() => {});
+                            window.removeEventListener('touchstart', onTouchWake);
+                            window.removeEventListener('pointerdown', onTouchWake);
+                        };
+                        window.addEventListener('touchstart', onTouchWake, { once: true });
+                        window.addEventListener('pointerdown', onTouchWake, { once: true });
+                    });
+                };
+
+                newEl.addEventListener('loadedmetadata', attemptPlay, { once: true });
+                newEl.addEventListener('canplay', attemptPlay, { once: true });
+            }
+            newEl.className = 'bg-media-item'; 
+            container.appendChild(newEl); 
+            void newEl.offsetWidth; 
+            newEl.classList.add('active');
+
             if (activeBgMedia) {
-                const oldEl = activeBgMedia; oldEl.classList.remove('active');
-                setTimeout(() => { if (oldEl.parentNode) { oldEl.parentNode.removeChild(oldEl); if(oldEl.tagName==='VIDEO'){ oldEl.pause(); oldEl.removeAttribute('src'); oldEl.load(); } } }, 1200);
+                const oldEl = activeBgMedia; 
+                oldEl.classList.remove('active');
+                setTimeout(() => { 
+                    if (oldEl.parentNode) { 
+                        oldEl.parentNode.removeChild(oldEl); 
+                        if (oldEl.tagName === 'VIDEO') { 
+                            oldEl.pause(); 
+                            oldEl.removeAttribute('src'); 
+                            oldEl.load(); 
+                        } 
+                    } 
+                }, 1200);
             }
             activeBgMedia = newEl;
         }
+
         function clearGlobalBackground() {
             if (activeBgMedia) { 
                 activeBgMedia.classList.remove('active'); 
