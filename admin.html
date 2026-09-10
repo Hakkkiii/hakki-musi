@@ -185,38 +185,48 @@
             </div>
         </div>
 
+        <!-- 🔊 专属 UI 交互音效引擎（支持直接编辑与路径设置） -->
         <div class="dash-section">
-            <h3>🔊 专属 UI 交互音效引擎（支持多个音频随机播放）</h3>
+            <h3>🔊 专属 UI 交互音效引擎（支持填写/编辑相对路径）</h3>
             <p style="font-size: 0.8rem; color: var(--text-sub); margin-bottom: 15px;">
-                为前台每个交互场景上传音频，触发时系统将自动随机抽取播放，避免单调重复。
+                每个音效既可以直接编辑相对路径（如 <code>./assets/click.wav</code>），也可以通过按钮上传。分类导览已调整为<strong>鼠标悬浮即可触发</strong>。
             </p>
             
-            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px;">
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 20px;">
                 <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <strong style="font-size: 0.9rem;">🖱️ 点击音效 (Click SFX)</strong>
-                        <label for="sfx-upload-click" class="btn" style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;">+ 添加音频</label>
-                        <input type="file" id="sfx-upload-click" accept="audio/*" multiple style="display: none;" onchange="handleSFXUpload(event, 'click')">
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn" style="padding: 3px 8px; font-size: 0.75rem;" onclick="addManualSFX('click')">+ 路径项</button>
+                            <label for="sfx-upload-click" class="btn" style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;">+ 上传</label>
+                            <input type="file" id="sfx-upload-click" accept="audio/*" multiple style="display: none;" onchange="handleSFXUpload(event, 'click')">
+                        </div>
                     </div>
-                    <div id="sfx-list-click" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                    <div id="sfx-list-click" style="display: flex; flex-direction: column; gap: 8px;"></div>
                 </div>
 
                 <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
                         <strong style="font-size: 0.9rem;">🎵 悬浮曲目音效 (Track Hover)</strong>
-                        <label for="sfx-upload-hover" class="btn" style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;">+ 添加音频</label>
-                        <input type="file" id="sfx-upload-hover" accept="audio/*" multiple style="display: none;" onchange="handleSFXUpload(event, 'hover')">
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn" style="padding: 3px 8px; font-size: 0.75rem;" onclick="addManualSFX('hover')">+ 路径项</button>
+                            <label for="sfx-upload-hover" class="btn" style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;">+ 上传</label>
+                            <input type="file" id="sfx-upload-hover" accept="audio/*" multiple style="display: none;" onchange="handleSFXUpload(event, 'hover')">
+                        </div>
                     </div>
-                    <div id="sfx-list-hover" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                    <div id="sfx-list-hover" style="display: flex; flex-direction: column; gap: 8px;"></div>
                 </div>
 
                 <div style="background: rgba(0,0,0,0.25); padding: 15px; border-radius: 10px; border: 1px solid var(--card-border);">
                     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                        <strong style="font-size: 0.9rem;">🧭 分类导览切换 (Category Nav)</strong>
-                        <label for="sfx-upload-nav" class="btn" style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;">+ 添加音频</label>
-                        <input type="file" id="sfx-upload-nav" accept="audio/*" multiple style="display: none;" onchange="handleSFXUpload(event, 'nav')">
+                        <strong style="font-size: 0.9rem;">🧭 分类导览悬浮 (Category Hover)</strong>
+                        <div style="display: flex; gap: 5px;">
+                            <button class="btn" style="padding: 3px 8px; font-size: 0.75rem;" onclick="addManualSFX('nav')">+ 路径项</button>
+                            <label for="sfx-upload-nav" class="btn" style="padding: 3px 8px; font-size: 0.75rem; cursor: pointer;">+ 上传</label>
+                            <input type="file" id="sfx-upload-nav" accept="audio/*" multiple style="display: none;" onchange="handleSFXUpload(event, 'nav')">
+                        </div>
                     </div>
-                    <div id="sfx-list-nav" style="display: flex; flex-direction: column; gap: 6px;"></div>
+                    <div id="sfx-list-nav" style="display: flex; flex-direction: column; gap: 8px;"></div>
                 </div>
             </div>
 
@@ -227,11 +237,11 @@
         </div>
 
         <div class="dash-section">
-            <h3>🌄 全局背景设置</h3>
+            <h3>🌄 全局背景/壁纸设置（支持直接编辑静态相对路径）</h3>
             <div style="display: flex; gap: 15px; align-items: flex-end; flex-wrap: wrap;">
                 <div class="input-group" style="flex: 1; margin-bottom: 0;">
-                    <label>备用/静态上线相对路径</label>
-                    <input type="text" id="global-bg-url" placeholder="如 ./assets/bg.jpg" onchange="syncAll()">
+                    <label>壁纸/背景文件相对路径地址 (例如 ./assets/hakki-white.png)</label>
+                    <input type="text" id="global-bg-url" placeholder="如 ./assets/bg.jpg" oninput="syncAll()">
                 </div>
                 <div class="input-group" style="width: 140px; margin-bottom: 0;">
                     <label>媒体类型</label>
@@ -248,13 +258,13 @@
             </div>
 
             <div style="display: flex; gap: 10px; margin-top: 15px; align-items: center; flex-wrap: wrap;">
-                <label for="admin-bg-img" class="btn primary" style="cursor: pointer;">🖼️ 上传本地图片背景</label>
+                <label for="admin-bg-img" class="btn primary" style="cursor: pointer;">🖼️ 上传本地图片壁纸</label>
                 <input type="file" id="admin-bg-img" accept="image/*" style="display: none;" onchange="handleBgUploadDirect(event, 'image')">
 
-                <label for="admin-bg-vid" class="btn primary" style="background:#ec4899; cursor: pointer;">📽️ 上传本地视频背景</label>
+                <label for="admin-bg-vid" class="btn primary" style="background:#ec4899; cursor: pointer;">📽️ 上传本地视频壁纸</label>
                 <input type="file" id="admin-bg-vid" accept="video/*" style="display: none;" onchange="handleBgUploadDirect(event, 'video')">
 
-                <button class="btn" onclick="clearGlobalBgDirect()" style="color:#ef4444;">✕ 清除背景</button>
+                <button class="btn" onclick="clearGlobalBgDirect()" style="color:#ef4444;">✕ 清除壁纸</button>
                 <span id="bg-upload-status" style="font-size: 0.8rem; color: #10b981; margin-left: 10px;"></span>
             </div>
         </div>
@@ -298,7 +308,7 @@
             <input type="hidden" id="edit-id">
             <div class="input-group"><label>作品标题</label><input type="text" id="edit-title"></div>
             <div class="input-group"><label>艺术家/作者</label><input type="text" id="edit-author"></div>
-            <div class="input-group"><label>文件相对路径 (静态打包时使用)</label><input type="text" id="edit-url" placeholder="如 ./assets/track.mp3"></div>
+            <div class="input-group"><label>文件相对路径 (静态打包推荐)</label><input type="text" id="edit-url" placeholder="如 ./assets/track.mp3"></div>
             <div class="input-group"><label>分类</label><select id="edit-category"></select></div>
             <div class="input-group"><label>卡片强调色</label><input type="color" id="edit-card-color" value="#8b5cf6" style="height: 38px; width: 100%;"></div>
             <div class="input-group">
@@ -351,7 +361,6 @@
     <script>
         const syncChannel = ('BroadcastChannel' in window) ? new BroadcastChannel('hakki_channel') : null;
 
-        // 双端标准库初始器
         function openDatabaseSafe() {
             return new Promise((resolve) => {
                 if (!('indexedDB' in window)) return resolve(null);
@@ -383,9 +392,7 @@
                     tx.oncomplete = resolve; 
                     tx.onerror = reject;
                 });
-            } catch (err) {
-                console.warn('本地 IndexedDB 保存失败:', err);
-            }
+            } catch (err) {}
         }
 
         let infoBlocks = [
@@ -451,6 +458,9 @@
             }
         }
 
+        // ==========================================
+        // 🔊 音效管理（支持上传与路径编辑）
+        // ==========================================
         async function handleSFXUpload(event, type) {
             const files = event.target.files;
             if (!files || files.length === 0) return;
@@ -459,11 +469,27 @@
             for (let file of files) {
                 const sfxId = 'sfx_' + type + '_' + Date.now() + '_' + Math.floor(Math.random()*1000);
                 await saveFileToDB(sfxId, file);
-                soundEffects[type].push({ id: sfxId, name: file.name });
+                // 默认生成相对路径推荐
+                soundEffects[type].push({ 
+                    id: sfxId, 
+                    name: file.name, 
+                    url: `./assets/${file.name}` 
+                });
             }
             renderSFXAdminList(type);
             syncAll();
             event.target.value = '';
+        }
+
+        function addManualSFX(type) {
+            if (!soundEffects[type]) soundEffects[type] = [];
+            soundEffects[type].push({
+                id: '',
+                name: '自定义采样',
+                url: './assets/sfx.wav'
+            });
+            renderSFXAdminList(type);
+            syncAll();
         }
 
         function renderSFXAdminList(type) {
@@ -472,14 +498,36 @@
             box.innerHTML = '';
             const list = soundEffects[type] || [];
             list.forEach((item, idx) => {
+                // 兼容老数据结构
+                const currentName = typeof item === 'object' ? (item.name || '音效文件') : '采样音频';
+                const currentUrl = typeof item === 'object' ? (item.url || '') : '';
+                const itemId = typeof item === 'object' ? item.id : item;
+
                 const row = document.createElement('div');
-                row.style = "display: flex; justify-content: space-between; align-items: center; background: rgba(255,255,255,0.05); padding: 4px 8px; border-radius: 6px; font-size: 0.75rem;";
+                row.className = 'dynamic-list-item';
+                row.style = "padding: 6px 10px; gap: 8px; margin-bottom: 6px;";
                 row.innerHTML = `
-                    <span style="overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 180px;">${item.name || item.id}</span>
-                    <span class="action-icon del" onclick="deleteSFX('${type}', ${idx})">✕</span>
+                    <div style="display:flex; flex-direction:column; width: 100px; flex-shrink:0;">
+                        <span style="font-size: 0.72rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="${currentName}">${currentName}</span>
+                    </div>
+                    <input type="text" value="${currentUrl}" placeholder="输入静态相对路径 (如 ./assets/${currentName})" 
+                        style="flex: 1; padding: 4px 8px; font-size: 0.75rem;" 
+                        oninput="updateSFXPath('${type}', ${idx}, this.value)">
+                    <span class="action-icon del" style="font-size: 0.8rem;" onclick="deleteSFX('${type}', ${idx})">✕</span>
                 `;
                 box.appendChild(row);
             });
+        }
+
+        function updateSFXPath(type, idx, val) {
+            if (soundEffects[type] && soundEffects[type][idx]) {
+                if (typeof soundEffects[type][idx] === 'object') {
+                    soundEffects[type][idx].url = val;
+                } else {
+                    soundEffects[type][idx] = { id: soundEffects[type][idx], name: '音效采样', url: val };
+                }
+                syncAll();
+            }
         }
 
         function deleteSFX(type, idx) {
@@ -494,7 +542,7 @@
             const file = event.target.files[0];
             if (!file) return;
             const status = document.getElementById('bg-upload-status');
-            status.innerText = '正在存入本地浏览器数据库...';
+            status.innerText = '正在存入本地数据库...';
 
             const dbId = 'global_bg_' + Date.now();
             await saveFileToDB(dbId, file);
@@ -504,7 +552,13 @@
             } catch(e) {}
 
             document.getElementById('global-bg-type').value = type;
-            status.innerText = `✅ 背景已缓存至本地！`;
+            // 自动填充相对路径推荐，方便打包
+            const bgInput = document.getElementById('global-bg-url');
+            if (!bgInput.value || bgInput.value.trim() === '') {
+                bgInput.value = `./assets/${file.name}`;
+            }
+
+            status.innerText = `✅ 壁纸已缓存 (可直接编辑上方路径)`;
             syncAll();
             event.target.value = '';
         }
@@ -515,7 +569,7 @@
                 localStorage.removeItem('hakki_bg_db_id');
             } catch(e) {}
             document.getElementById('global-bg-url').value = '';
-            document.getElementById('bg-upload-status').innerText = '背景已清除';
+            document.getElementById('bg-upload-status').innerText = '壁纸已清除';
             syncAll();
         }
 
@@ -531,7 +585,7 @@
             a.click(); 
             document.body.removeChild(a); 
             URL.revokeObjectURL(url);
-            alert('导出成功！请将下载的 config.js 放进与 index.html 同级目录。');
+            alert('导出成功！请将下载的 config.js 放进项目同级目录。');
         }
 
         function importConfig(event) {
@@ -611,7 +665,7 @@
                 type: 'audio', 
                 title: file.name.replace(/\.[^/.]+$/, ""), 
                 author: "hakki",
-                url: '', 
+                url: `./assets/${file.name}`, 
                 dbId: dbId, 
                 category: document.getElementById('upload-cat-select').value || (categoryBlocks.length>0?categoryBlocks[0].name:'未分类'),
                 notes: [], 
@@ -643,6 +697,7 @@
                         <span style="font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; background: rgba(var(--theme-rgb), 0.2); color: var(--theme-color); font-weight: bold;">AUDIO</span>
                         <strong>${media.title}</strong>
                         <span style="font-size: 0.8rem; color: var(--text-sub);">[${media.category}]</span>
+                        <span style="font-size: 0.75rem; color: var(--text-sub); opacity: 0.7;">${media.url || ''}</span>
                     </div>
                     <div style="display: flex; gap: 10px;">
                         <button class="btn" style="padding: 4px 10px; font-size: 0.8rem;" onclick="openEditModal(${media.id})">✏️ 编辑</button>
@@ -776,7 +831,7 @@
             }
             document.getElementById('card-opacity-val').innerText = document.getElementById('card-opacity').value + '%';
             if (soundEffects.volume !== undefined) document.getElementById('sfx-volume').value = soundEffects.volume;
-            if(currentBgDbId) document.getElementById('bg-upload-status').innerText = '✅ 本地数据库中已存有背景';
+            if(currentBgDbId) document.getElementById('bg-upload-status').innerText = '✅ 本地数据库中已存有壁纸 (可编辑上方路径)';
 
             renderInfoAdmin();
             renderCatAdmin();
